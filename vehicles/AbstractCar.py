@@ -16,6 +16,7 @@ class AbstractCar:
         self.rect = self.img.get_rect(center=(400, 300))
         self.start_pos = start_pos
 
+     #for rl the rotation_speed can be considered as the steering angle.
     def rotate(self, left=False, right=False, rotation_speed=-5):
         rotation_speed=abs(rotation_speed)
         if left:
@@ -38,6 +39,10 @@ class AbstractCar:
 
     def move_forward(self):
         self.vel = min(self.vel + self.acceleration, self.max_vel)
+        self.move()
+
+    def move_forward_rl(self,acceleration):
+        self.vel = min(self.vel + acceleration, self.max_vel)
         self.move()
 
     def move_backward(self):
