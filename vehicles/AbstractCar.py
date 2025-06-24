@@ -16,7 +16,7 @@ class AbstractCar:
         self.rect = self.img.get_rect(center=(400, 300))
         self.start_pos = start_pos
 
-    def rotate(self, left=False, right=False, rotation_speed=-10):
+    def rotate(self, left=False, right=False, rotation_speed=-5):
         rotation_speed=abs(rotation_speed)
         if left:
             self.angle += min(rotation_speed, self.rotation_vel)
