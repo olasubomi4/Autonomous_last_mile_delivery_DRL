@@ -12,12 +12,26 @@ class AbstractCar:
         self.angle = 0
         self.x, self.y = start_pos
         self.acceleration = 0.1
+        self.original_image = img
+        self.rect = self.img.get_rect(center=(400, 300))
+        self.start_pos = start_pos
 
-    def rotate(self, left=False, right=False):
+    def rotate(self, left=False, right=False, rotation_speed=-10):
+        rotation_speed=abs(rotation_speed)
         if left:
-            self.angle += self.rotation_vel
+            self.angle += min(rotation_speed, self.rotation_vel)
         elif right:
-            self.angle -= self.rotation_vel
+            self.angle -= min(rotation_speed, self.rotation_vel)
+
+    # def rotate(self, left=False, right=False,rotation_speed=-1):
+    #     rotation_speed=abs(rotation_speed)
+    #     if left:
+    #         self.angle += min(rotation_speed,self.rotation_vel)
+    #     elif right:
+    #         self.angle -= min(rotation_speed,self.rotation_vel)
+    #
+    #     self.image = pygame.transform.rotate(self.original_image, self.angle)
+    #     self.rect = self.image.get_rect(center=self.rect.center)
 
     def draw(self, win):
         blit_rotate_center(win, self.img, (self.x, self.y), self.angle)
@@ -52,6 +66,6 @@ class AbstractCar:
 
 
     def reset(self):
-        self.x, self.y = self.START_POS
+        self.x, self.y = self.start_pos
         self.angle = 0
         self.vel = 0

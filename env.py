@@ -15,6 +15,9 @@ TRACK_BORDER_MASK = pygame.mask.from_surface(TRACK_BORDER)
 OBSTACLE = scale_image(pygame.image.load("imgs/obstacle8.png"), 0.05)
 OBSTACLE_MASK = pygame.mask.from_surface(OBSTACLE)
 
+DELIVERY_LOCATION = scale_image(pygame.image.load("imgs/delivery-locations-icon.png"), 0.05)
+DELIVERY_LOCATION_MASK = pygame.mask.from_surface(DELIVERY_LOCATION)
+
 RED_CAR = scale_image(pygame.image.load("imgs/red-car.png"), 0.4)
 
 WIDTH, HEIGHT = TRACK.get_width(), TRACK.get_height()
@@ -25,7 +28,7 @@ pygame.display.set_caption("Dublin city center")
 
 FPS = 60
 
-def draw(win, images, player_car,obstacles=None):
+def draw(win, images, player_car,obstacles=None,deliveries=None):
     # Calculate camera offset
     offset_x = player_car.x - WIN.get_width() / 2
     offset_y = player_car.y - WIN.get_height() / 2
@@ -43,6 +46,9 @@ def draw(win, images, player_car,obstacles=None):
 
     for obstacle in obstacles:
         win.blit(OBSTACLE, (obstacle[0] - offset_x, obstacle[1] - offset_y))
+
+    for delivery in deliveries:
+        win.blit(DELIVERY_LOCATION, (delivery[0] - offset_x, delivery[1] - offset_y))
 
     # Always draw the car at window center (or appropriate offset if clamped at edge)
     car_draw_x = player_car.x - offset_x
@@ -92,6 +98,20 @@ def generate_obstacles(num_obstacles: int = 10):
             i = i + 1
     return obstacles
 
+def generate_deliveries(num_deliveries: int = 1, Obstacles=None):
+    deliveries = []
+    i = 0
+    while i < num_deliveries:
+        x = random.randint(0, WIDTH)
+        y = random.randint(0, HEIGHT)
+        if isObstacleOnTheWay ((x,y)) == None and (x,y) not in obstacles:
+            deliveries.append(
+                (x, y)
+            )
+            i = i + 1
+
+    # deliveries.append((1800,600))
+    return deliveries
 
 
 run = True
@@ -99,11 +119,19 @@ clock = pygame.time.Clock()
 obstacles = generate_obstacles();
 images = [(TRACK, (0, 0)), (TRACK_BORDER, (0, 0))]
 player_car = PlayerCar(RED_CAR,(155, 370),3, 8)
-
+deliveries = generate_deliveries()
+next_level = False
+start_time = time.time()
 while run:
+
+    if next_level:
+        obstacles = generate_obstacles()
+        deliveries = generate_deliveries()
+        start_time = time.time()
+        next_level = False
     clock.tick(FPS)
 
-    draw(WIN, images, player_car,obstacles)
+    draw(WIN, images, player_car,obstacles,deliveries)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -113,10 +141,16 @@ while run:
     move_player(player_car)
 
     if player_car.collide(TRACK_BORDER_MASK):
-        player_car.bounce()
-        # print("Car bounce")
+        # player_car.bounce()
+        pass
 
     if player_car.collide_with_obstacle(OBSTACLE_MASK, obstacles):
+        # player_car.reset()
+        pass
+
+    if player_car.collide_with_obstacle(DELIVERY_LOCATION_MASK, deliveries):
         player_car.reset()
+        next_level = True
+        print(f"Time taken: {time.time() - start_time} seconds")
 
 pygame.quit()
