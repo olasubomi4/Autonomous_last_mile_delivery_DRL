@@ -3,6 +3,9 @@ import pygame
 import time
 import math
 
+from vehicles import Delivery
+
+
 class AbstractCar:
     def __init__(self, max_vel, rotation_vel,img,start_pos):
         self.img = img
@@ -67,6 +70,12 @@ class AbstractCar:
         for obstacle in obstacles:
             if self.collide(obstacle_mask, obstacle[0], obstacle[1]) != None:
                 return True
+        return False
+
+    def is_delivery_completed(self, delivery_mask, target_delivery:Delivery):
+        target_delivery_location= target_delivery[1].delivery_destination
+        if self.collide(delivery_mask, target_delivery_location[0], target_delivery_location[1]) != None:
+            return True
         return False
 
 

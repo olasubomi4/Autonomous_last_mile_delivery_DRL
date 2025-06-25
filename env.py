@@ -138,7 +138,13 @@ while run:
             run = False
             break
 
+    # time.sleep(10)
+    #
+    # WIN.blit(env.delivery_location, (delivery[0] - offset_x, delivery[1] - offset_y))
+
     move_player(player_car)
+
+
 
     if player_car.collide(TRACK_BORDER_MASK):
         # player_car.bounce()
