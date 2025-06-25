@@ -84,12 +84,12 @@ while run:
     env.move_player(player_car)
 
     if player_car.collide(TRACK_BORDER_MASK):
-        # player_car.bounce()
-        pass
+        player_car.bounce()
+        # pass
 
     if player_car.collide_with_obstacle(OBSTACLE_MASK, obstacles):
-        # player_car.reset()
-        pass
+        player_car.reset()
+        # pass
 
     if player_car.is_delivery_completed(DELIVERY_LOCATION_MASK, target_delivery) and player_car.vel==0:
         # player_car.reset()
