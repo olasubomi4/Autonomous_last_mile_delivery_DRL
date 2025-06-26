@@ -57,6 +57,7 @@ while run:
     if  deliveries_pending<=0:
         player_car.reset()
         obstacles, deliveries, start_time = env.reset()
+        deliveries_pending=len(deliveries)
         print("You won")
         print("Resetting")
 
@@ -81,7 +82,7 @@ while run:
         path = grid.a_star_path_planning((int(player_car.x), int(player_car.y)), target_delivery[1].delivery_destination,
                                          Vehicles.CAR)
         for point in path:
-            pygame.draw.rect(TRACK, (255, 0, 0), (point[0], point[1], 1, 1))
+            pygame.draw.rect(TRACK, (0, 255, 0), (point[0], point[1], 1, 1))
             pygame.display.update()
         next_level = False
 
@@ -92,15 +93,17 @@ while run:
             break
     if start2:
 
-        # generated_grid=grid.generate_grid(RED_CAR,TRACK_BORDER_MASK)
-        # joblib.dump(generated_grid,"grid.pkl")
+        generated_grid=grid.generate_grid(RED_CAR,TRACK_BORDER_MASK)
+        joblib.dump(generated_grid,"grid.pkl")
         # print("grid dumped")
         # grid=joblib.load("grid.pkl")
-        grid.load_existing_grid()
+        # grid.load_existing_grid()
+        grid.get_grid_node(player_car.x,player_car.y,obstacles,RED_CAR)
         path= grid.a_star_path_planning((player_car.x,player_car.y),target_delivery[1].delivery_destination,Vehicles.CAR)
+
         joblib.dump(path,"path.pkl")
         for point in path:
-            pygame.draw.rect(TRACK, (255, 0, 0), (point[0], point[1], 1, 1))
+            pygame.draw.rect(TRACK, (0, 255, 0), (point[0], point[1], 1, 1))
             pygame.display.update()
         print("path dumped")
         start2=False
@@ -113,13 +116,12 @@ while run:
     env.move_player(player_car)
 
     if player_car.collide(TRACK_BORDER_MASK):
-        player_car.bounce()
-        # pass
+        # player_car.bounce()
+        pass
 
     if player_car.collide_with_obstacle(OBSTACLE_MASK, obstacles):
-        player_car.reset()
-        # pass
-
+        # player_car.reset()
+        pass
     if player_car.is_delivery_completed(DELIVERY_LOCATION_MASK, target_delivery) and player_car.vel==0:
         # player_car.reset()
         next_level = True

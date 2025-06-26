@@ -3,7 +3,7 @@ from vehicles.Vehicle import Vehicles
 
 class GridNode:
     max_speed = 60
-    def __init__(self,x, y, color,is_road=False,is_blocked=False):
+    def __init__(self,x, y, color,is_road=False,is_blocked=True):
         self.x = x
         self.y = y
         self.color: tuple[int, int, int, int] = color
