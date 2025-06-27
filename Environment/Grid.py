@@ -9,9 +9,9 @@ import heapq
 from utils import manhattan_distance
 
 class Grid:
-    OBSTACLE = scale_image(pygame.image.load("imgs/obstacle8.png"), 0.05)
+    OBSTACLE = scale_image(pygame.image.load("imgs/obstacle8.png"), 0.02)
     OBSTACLE_MASK = pygame.mask.from_surface(OBSTACLE)
-    CELL_SIZE=15
+    CELL_SIZE=1
     def __init__(self, width, height,track):
         # self.width = width
         # self.height = height
@@ -22,8 +22,12 @@ class Grid:
         self.track=track
         self.width = len(self.grid)
         self.height = len(self.grid[0])
-        # self.visualize_grid()
 
+    def draw_grid_lines(self, screen):
+        for x in range(0, self.width * Grid.CELL_SIZE, Grid.CELL_SIZE):
+            pygame.draw.line(screen, (200, 200, 200), (x, 0), (x, self.height * Grid.CELL_SIZE), 1)
+        for y in range(0, self.height * Grid.CELL_SIZE, Grid.CELL_SIZE):
+            pygame.draw.line(screen, (200, 200, 200), (0, y), (self.width * Grid.CELL_SIZE, y), 1)
 
     # def generate_grid(self,RED_CAR,TRACK_BORDER_MASK):
     #     car = PlayerCar(RED_CAR, (0, 0), 3, 8)
@@ -48,9 +52,11 @@ class Grid:
                 current_grid_color = track_surface.get_at((x, y))
 
                 car.x, car.y = x, y
-                if current_grid_color is not None and current_grid_color == Color.BLACK.value and not car.collide(
-                        TRACK_BORDER_MASK):
+                # if (current_grid_color is not None) and current_grid_color == Color.BLACK.value  and car.collide(TRACK_BORDER_MASK) is None:
+                if  current_grid_color == Color.BLACK.value:
+                # if car.collide(TRACK_BORDER_MASK) is None:
                     current_grid_node.is_road = True
+                    current_grid_node.is_blocked=False
                     current_grid_node.color = Color.BLACK.value
         return self.grid
 
@@ -79,17 +85,13 @@ class Grid:
         self.grid=joblib.load("grid.pkl")
         return self.grid
 
-    def visualize_grid(self):
-        for i in range(self.width):
-            for j in range(self.height):
-                pygame.draw.rect(self.track, self.grid[i][j].color, (i * Grid.CELL_SIZE, j * Grid.CELL_SIZE, Grid.CELL_SIZE, Grid.CELL_SIZE))
-        pygame.display.update()
+
 
     def a_star_path_planning(self,start,goal,vehicle):
         open_set = []
 
         start = (start[0] // Grid.CELL_SIZE, start[1] // Grid.CELL_SIZE)
-        goal = (goal[0] // Grid.CELL_SIZE, goal[1] // Grid.CELL_SIZE)
+        goal = (goal.x // Grid.CELL_SIZE, goal.y// Grid.CELL_SIZE)
 
         heapq.heappush(open_set, (0+ manhattan_distance(start[0],start[1], goal[0],goal[1]), 0, start))
         came_from = {}
@@ -107,12 +109,13 @@ class Grid:
                 pixel_path = [(x * Grid.CELL_SIZE, y * Grid.CELL_SIZE) for (x, y) in path[::-1]]
                 return pixel_path
 
+            # for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1),  # Up, Down, Left, Right
+            #                    (-1, -1), (-1, 1), (1, -1), (1, 1)]:
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # 4 directions only
                 neighbor = (current[0] + dx, current[1] + dy)
                 if 0 <= neighbor[0] < self.width and 0 <= neighbor[1] < self.height:
                     neighbor_node = self.grid[neighbor[0]][neighbor[1]]
-                    # if neighbor_node.is_road and neighbor_node.is_blocked==False:
-                    if not neighbor_node.is_blocked:
+                    if neighbor_node.is_blocked==False and neighbor_node.is_road==True:
                         move_cost = self.grid[neighbor[0]][neighbor[1]].get_node_weight(vehicle)
                         tentative_g_score = g_score[current] + move_cost
                         if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
@@ -120,5 +123,4 @@ class Grid:
                             f_score = tentative_g_score + manhattan_distance(neighbor[0], neighbor[1], goal[0], goal[1])
                             heapq.heappush(open_set, (f_score, tentative_g_score, neighbor))
                             came_from[neighbor] = current
-
         return None

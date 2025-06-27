@@ -68,13 +68,13 @@ class AbstractCar:
 
     def collide_with_obstacle(self, obstacle_mask, obstacles):
         for obstacle in obstacles:
-            if self.collide(obstacle_mask, obstacle[0], obstacle[1]) != None:
+            if self.collide(obstacle_mask, obstacle.x, obstacle.y) is not None:
                 return True
         return False
 
     def is_delivery_completed(self, delivery_mask, target_delivery:Delivery):
         target_delivery_location= target_delivery[1].delivery_destination
-        if self.collide(delivery_mask, target_delivery_location[0], target_delivery_location[1]) != None:
+        if self.collide(delivery_mask, target_delivery_location.x, target_delivery_location.y) != None:
             return True
         return False
 
