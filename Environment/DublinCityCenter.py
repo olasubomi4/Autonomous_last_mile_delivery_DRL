@@ -15,6 +15,7 @@ from vehicles.Delivery import Delivery
 class DublinCityCenter:
     def __init__(self, track,track_border,obstacle,delivery_location,vehicle,win,width,height):
         self.track = track
+        self.track_clone = track.copy()
         self.track_border = track_border
         self.obstacle = obstacle
         self.delivery_location = delivery_location
@@ -35,6 +36,8 @@ class DublinCityCenter:
 
     def draw(self, win, images, player_car, obstacles=None, deliveries=None,path=None):
         # Calculate camera offset
+
+
         offset_x = player_car.x - self.win.get_width() / 2
         offset_y = player_car.y - self.win.get_height() / 2
 
@@ -46,20 +49,28 @@ class DublinCityCenter:
         offset_y = max(0, min(offset_y, max_y))
 
         # Draw each image with the offset applied
+
+        if path is not None:
+            self.track.blit(self.track_clone, (0, 0))
+
+            # self.track.fill((0, 0, 0))
+            for point in path:
+                pygame.draw.rect(self.track, (0, 255, 0), (point[0], point[1], 1, 1))
+
         for img, pos in images:
             win.blit(img, (pos[0] - offset_x, pos[1] - offset_y))
 
         for obstacle in obstacles:
             win.blit(self.obstacle, (obstacle.x - offset_x, obstacle.y - offset_y))
 
+
+
         for delivery in deliveries:
             state = delivery.delivery_state
             if state==DeliveryStates.PREPARING or state==DeliveryStates.IN_PROGRESS:
                 delivery_destination = delivery.delivery_destination
                 win.blit(self.delivery_location, (delivery_destination.x - offset_x, delivery_destination.y - offset_y))
-        if path is not None:
-            for point in path:
-                pygame.draw.rect(self.track, (0, 255, 0), (point[0], point[1], 1, 1))
+
                 # pygame.display.update()
 
         # Always draw the car at window center (or appropriate offset if clamped at edge)
@@ -68,6 +79,10 @@ class DublinCityCenter:
         blit_rotate_center(win, player_car.img, (car_draw_x, car_draw_y), player_car.angle)
 
         pygame.display.update()
+
+
+        # pygame.display.update()
+
 
     def move_player(self,player_car):
         keys = pygame.key.get_pressed()
@@ -150,12 +165,14 @@ class DublinCityCenter:
             self.delivery_queue.clear()
         for delivery in deliveries:
             if delivery.delivery_state == DeliveryStates.PENDING or delivery.delivery_state == DeliveryStates.PREPARING:
-                heapq.heappush(self.delivery_queue,(self.get_rider_cost_distance_from_delivery(delivery,player_car,grid),delivery))
+                cost_from_distance =self.get_rider_cost_distance_from_delivery(delivery, player_car, grid)
+                heapq.heappush(self.delivery_queue,(cost_from_distance[1],delivery,cost_from_distance[0]))
 
     def get_closest_delivery(self,player_car):
         print(heapq.nsmallest(len(self.delivery_queue),self.delivery_queue))
         # time.sleep(10)
-        return heapq.heappop(self.delivery_queue)
+        a=heapq.heappop(self.delivery_queue)
+        return a
 
     def update_delivery_state_after_finding_tagret(self,deliveries,target_delivery):
         target_delivery[1].delivery_state = DeliveryStates.IN_PROGRESS
@@ -174,9 +191,9 @@ class DublinCityCenter:
         delivery_destination = delivery.delivery_destination
         result =grid.a_star_path_planning((int(player_car.x),int(player_car.y)),delivery_destination,player_car.vehicle)
         if result is not None:
-            return result[1]
+            return result
         max_int_value=  10 ** 100
-        return max_int_value
+        return [],max_int_value
 
 
     # def get_rider_distance_from_delivery(self,delivery:Delivery,player_car):

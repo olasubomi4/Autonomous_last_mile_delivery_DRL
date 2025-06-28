@@ -2,7 +2,7 @@ from Environment.Color import Color
 from vehicles.Vehicle import Vehicles
 
 class GridNode:
-    max_speed = 65
+    max_speed = 70
     def __init__(self,x, y, color,is_road=False,is_blocked=True):
         self.x = x
         self.y = y

@@ -73,9 +73,10 @@ while run:
             break
         clock.tick(FPS)
         target_delivery = env.get_closest_delivery(player_car)
+        target_delivery_path=target_delivery[2]
         env.update_delivery_state_after_finding_tagret(deliveries, target_delivery)
         # grid.draw_grid_lines(TRACK)
-        env.draw(WIN, images, player_car, obstacles, deliveries)
+        env.draw(WIN, images, player_car, obstacles, deliveries,path=target_delivery_path)
         start=False
 
     clock.tick(FPS)
@@ -83,12 +84,13 @@ while run:
     if next_level:
         env.init_delivery_queue(deliveries, player_car,grid)
         target_delivery = env.get_closest_delivery(player_car)
+        target_delivery_path=target_delivery[2]
         env.update_delivery_state_after_finding_tagret(deliveries, target_delivery)
         # env.draw(WIN, images, player_car, obstacles, deliveries)
         # path = grid.a_star_path_planning((int(player_car.x), int(player_car.y)), target_delivery[1].delivery_destination,
         #                                  Vehicles.CAR)
-        # env.draw(WIN, images, player_car, obstacles, deliveries, path=path)
-        env.draw(WIN, images, player_car, obstacles, deliveries)
+        env.draw(WIN, images, player_car, obstacles, deliveries, path=target_delivery_path)
+        # env.draw(WIN, images, player_car, obstacles, deliveries)
 
 
         next_level = False
