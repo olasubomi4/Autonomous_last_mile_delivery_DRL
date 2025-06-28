@@ -41,9 +41,32 @@ class Grid:
     #                 current_grid_node.color=Color.BLACK.value
     #                 self.grid[i][j]=current_grid_node
     #     return self.grid
+    # def generate_grid(self, RED_CAR, TRACK_BORDER_MASK):
+    #     track_surface = self.track.convert()
+    #     car = PlayerCar(RED_CAR, (0, 0), 3, 8)
+    #     for i in range(self.width):
+    #         for j in range(self.height):
+    #             x = i * Grid.CELL_SIZE
+    #             y = j * Grid.CELL_SIZE
+    #             current_grid_node = self.grid[i][j]
+    #             current_grid_color = track_surface.get_at((x, y))
+    #
+    #             car.x, car.y = x, y
+    #             if (current_grid_color is not None) and current_grid_color == Color.BLACK.value  and car.collide(TRACK_BORDER_MASK) is None:
+    #             # if  current_grid_color == Color.BLACK.value:
+    #             # if car.collide(TRACK_BORDER_MASK) is None:
+    #                 current_grid_node.is_road = True
+    #                 current_grid_node.is_blocked=False
+    #                 current_grid_node.color = Color.BLACK.value
+    #     return self.grid
+
     def generate_grid(self, RED_CAR, TRACK_BORDER_MASK):
         track_surface = self.track.convert()
-        car = PlayerCar(RED_CAR, (0, 0), 3, 8)
+        temp_car = PlayerCar(RED_CAR, (0, 0), max_vel=3, rotation_vel=8)
+        car_mask = pygame.mask.from_surface(temp_car.IMG)
+        car_width = temp_car.IMG.get_width()
+        car_height = temp_car.IMG.get_height()
+
         for i in range(self.width):
             for j in range(self.height):
                 x = i * Grid.CELL_SIZE
@@ -51,13 +74,22 @@ class Grid:
                 current_grid_node = self.grid[i][j]
                 current_grid_color = track_surface.get_at((x, y))
 
-                car.x, car.y = x, y
-                if (current_grid_color is not None) and current_grid_color == Color.BLACK.value  and car.collide(TRACK_BORDER_MASK) is None:
-                # if  current_grid_color == Color.BLACK.value:
-                # if car.collide(TRACK_BORDER_MASK) is None:
+                if current_grid_color != Color.BLACK.value:
+                    continue
+
+                # Position the car's top-left so that its center is at (x, y)
+                car_x = x - car_width // 2
+                car_y = y - car_height // 2
+
+                # Check collision against track border
+                offset = (int(car_x - 0), int(car_y - 0))  # Assuming TRACK_BORDER at (0, 0)
+                collision = TRACK_BORDER_MASK.overlap(car_mask, offset)
+
+                if not collision:
                     current_grid_node.is_road = True
-                    current_grid_node.is_blocked=False
+                    current_grid_node.is_blocked = False
                     current_grid_node.color = Color.BLACK.value
+
         return self.grid
 
     # def get_grid_node(self,x,y,obstacles,RED_CAR):
