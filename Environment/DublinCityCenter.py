@@ -163,9 +163,9 @@ class DublinCityCenter:
             if delivery.delivery_state == DeliveryStates.PREPARING:
                 delivery.delivery_state = DeliveryStates.PENDING
 
-    def reset(self,grid):
-        obstacles = self.generate_obstacles(grid)
-        deliveries = self.generate_deliveries(grid)
+    def reset(self,grid,player_start_pos):
+        obstacles = self.generate_obstacles(grid, player_start_pos, num_obstacles=10)
+        deliveries = self.generate_deliveries(grid,player_start_pos)
         start_time = time.time()
         return obstacles, deliveries, start_time
 

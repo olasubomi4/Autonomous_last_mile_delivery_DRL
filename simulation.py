@@ -61,7 +61,7 @@ while run:
     env.draw(WIN, images, player_car, obstacles, deliveries)
     if  deliveries_pending<=0:
         player_car.reset()
-        obstacles, deliveries, start_time = env.reset(grid)
+        obstacles, deliveries, start_time = env.reset(grid,player_start_pos)
         deliveries_pending=len(deliveries)
         print("You won")
         print("Resetting")
@@ -102,7 +102,6 @@ while run:
         # print("grid dumped")
         # grid=joblib.load("grid.pkl")
         # grid.load_existing_grid()
-        grid.get_grid_node(player_car.x,player_car.y,obstacles,RED_CAR)
         path= grid.a_star_path_planning((player_car.x,player_car.y),target_delivery[1].delivery_destination,Vehicles.CAR)
 
         if path is not None:
