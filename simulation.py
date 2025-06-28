@@ -47,6 +47,7 @@ obstacles = env.generate_obstacles(grid,player_start_pos,num_obstacles=10)
 
 number_of_deliveries = 10
 deliveries_pending = 10
+grid.get_grid_node(player_car.x, player_car.y, obstacles, RED_CAR)
 deliveries:[Delivery] = env.generate_deliveries(grid,player_start_pos,number_of_deliveries)
 
 next_level = False
@@ -101,6 +102,7 @@ while run:
         # print("grid dumped")
         # grid=joblib.load("grid.pkl")
         # grid.load_existing_grid()
+        grid.get_grid_node(player_car.x,player_car.y,obstacles,RED_CAR)
         path= grid.a_star_path_planning((player_car.x,player_car.y),target_delivery[1].delivery_destination,Vehicles.CAR)
 
         if path is not None:

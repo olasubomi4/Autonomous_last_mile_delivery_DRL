@@ -52,8 +52,8 @@ class Grid:
                 current_grid_color = track_surface.get_at((x, y))
 
                 car.x, car.y = x, y
-                # if (current_grid_color is not None) and current_grid_color == Color.BLACK.value  and car.collide(TRACK_BORDER_MASK) is None:
-                if  current_grid_color == Color.BLACK.value:
+                if (current_grid_color is not None) and current_grid_color == Color.BLACK.value  and car.collide(TRACK_BORDER_MASK) is None:
+                # if  current_grid_color == Color.BLACK.value:
                 # if car.collide(TRACK_BORDER_MASK) is None:
                     current_grid_node.is_road = True
                     current_grid_node.is_blocked=False
@@ -69,17 +69,47 @@ class Grid:
     #                 self.grid[i][j].is_blocked=True
     #             else:
     #                 self.grid[i][j].is_blocked=False
-    def get_grid_node(self,x,y,obstacles,RED_CAR):
-        car=PlayerCar(RED_CAR, (x, y), 3, 8)
+    # def get_grid_node(self,x,y,obstacles,RED_CAR):
+    #     car=PlayerCar(RED_CAR, (x, y), 3, 8)
+    #     for i in range(self.width):
+    #         for j in range(self.height):
+    #             x = i * Grid.CELL_SIZE
+    #             y = j * Grid.CELL_SIZE
+    #             car.x, car.y = x, y
+    #             if self.grid[i][j].is_road:
+    #                 self.grid[i][j].is_blocked = car.collide_with_obstacle(Grid.OBSTACLE_MASK, obstacles)
+    #             else:
+    #                 self.grid[i][j].is_blocked = True
+
+    def get_grid_node(self, x, y, obstacles, RED_CAR):
+        temp_car = PlayerCar(RED_CAR, (x, y), max_vel=3, rotation_vel=8)
+        car_mask = pygame.mask.from_surface(temp_car.IMG)
+        car_width = temp_car.IMG.get_width()
+        car_height = temp_car.IMG.get_height()
+
         for i in range(self.width):
             for j in range(self.height):
-                x = i * Grid.CELL_SIZE
-                y = j * Grid.CELL_SIZE
-                car.x, car.y = x, y
-                if self.grid[i][j].is_road:
-                    self.grid[i][j].is_blocked = car.collide_with_obstacle(Grid.OBSTACLE_MASK, obstacles)
-                else:
+                x_pixel = i * Grid.CELL_SIZE
+                y_pixel = j * Grid.CELL_SIZE
+
+                if not self.grid[i][j].is_road:
                     self.grid[i][j].is_blocked = True
+                    continue
+
+                # Place car's topleft to center the image at (x_pixel, y_pixel)
+                car_x = x_pixel - car_width // 2
+                car_y = y_pixel - car_height // 2
+                blocked = False
+
+                # Check for collision with each obstacle
+                for obs in obstacles:
+                    offset_x = int(obs.x - car_x)
+                    offset_y = int(obs.y - car_y)
+                    if car_mask.overlap(Grid.OBSTACLE_MASK, (offset_x, offset_y)):
+                        blocked = True
+                        break
+
+                self.grid[i][j].is_blocked = blocked
 
     def load_existing_grid(self):
         self.grid=joblib.load("grid.pkl")
