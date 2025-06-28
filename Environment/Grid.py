@@ -11,10 +11,8 @@ from utils import manhattan_distance
 class Grid:
     OBSTACLE = scale_image(pygame.image.load("imgs/obstacle8.png"), 0.02)
     OBSTACLE_MASK = pygame.mask.from_surface(OBSTACLE)
-    CELL_SIZE=1
+    CELL_SIZE=6
     def __init__(self, width, height,track):
-        # self.width = width
-        # self.height = height
         self.grid = [
             [GridNode(i, j, Color.RED.value) for j in range(0, height, Grid.CELL_SIZE)]
             for i in range(0, width, Grid.CELL_SIZE)
@@ -74,7 +72,7 @@ class Grid:
                 current_grid_node = self.grid[i][j]
                 current_grid_color = track_surface.get_at((x, y))
 
-                if current_grid_color != Color.BLACK.value:
+                if current_grid_color != Color.BLACK.value and current_grid_color != Color.BLUE.value :
                     continue
 
                 # Position the car's top-left so that its center is at (x, y)
@@ -88,7 +86,7 @@ class Grid:
                 if not collision:
                     current_grid_node.is_road = True
                     current_grid_node.is_blocked = False
-                    current_grid_node.color = Color.BLACK.value
+                    current_grid_node.color = current_grid_color
 
         return self.grid
 
@@ -169,10 +167,9 @@ class Grid:
                     current = came_from[current]
                 path.append(start)
                 pixel_path = [(x * Grid.CELL_SIZE, y * Grid.CELL_SIZE) for (x, y) in path[::-1]]
-                return pixel_path
+                return pixel_path,current_cost
 
-            # for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1),  # Up, Down, Left, Right
-            #                    (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # 4 directions only
                 neighbor = (current[0] + dx, current[1] + dy)
                 if 0 <= neighbor[0] < self.width and 0 <= neighbor[1] < self.height:
