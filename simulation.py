@@ -123,7 +123,7 @@ while run:
     # color=TRACK.convert().get_at((70,70))
     #
     # print(f"color at {color}")
-    env.move_player(player_car)
+    env.move_player(player_car,grid)
 
     if player_car.collide(TRACK_BORDER_MASK):
         player_car.bounce()

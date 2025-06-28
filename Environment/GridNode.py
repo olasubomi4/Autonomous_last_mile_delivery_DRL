@@ -1,4 +1,5 @@
 from Environment.Color import Color
+# from vehicles.AbstractCar import AbstractCar
 from vehicles.Vehicle import Vehicles
 
 class GridNode:
@@ -16,6 +17,12 @@ class GridNode:
             return vehicle.value.street_max_speed
         else:
             return vehicle.value.high_way_max_speed
+
+    def get_speed_limit_for_car(self, vehicle: Vehicles,max_velocity):
+        if self.color==Color.BLACK.value:
+            return (vehicle.value.street_max_speed/GridNode.max_speed) *max_velocity
+        else:
+            return (vehicle.value.high_way_max_speed/GridNode.max_speed) *max_velocity
 
     def get_node_weight(self, vehicle: Vehicles):
         if self.color==Color.BLACK.value:

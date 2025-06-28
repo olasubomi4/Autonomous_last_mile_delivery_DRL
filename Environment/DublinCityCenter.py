@@ -84,7 +84,7 @@ class DublinCityCenter:
         # pygame.display.update()
 
 
-    def move_player(self,player_car):
+    def move_player(self,player_car,grid):
         keys = pygame.key.get_pressed()
         moved = False
 
@@ -94,10 +94,13 @@ class DublinCityCenter:
             player_car.rotate(right=True)
         if keys[pygame.K_w]:
             moved = True
-            player_car.move_forward()
+            grid_node = grid.grid[int(player_car.x) // Grid.CELL_SIZE][int(player_car.y) // Grid.CELL_SIZE]
+
+            player_car.move_forward(grid_node)
         if keys[pygame.K_s]:
             moved = True
-            player_car.move_backward()
+            grid_node = grid.grid[int(player_car.x) // Grid.CELL_SIZE][int(player_car.y) // Grid.CELL_SIZE]
+            player_car.move_backward(grid_node)
 
         if not moved:
             player_car.reduce_speed()

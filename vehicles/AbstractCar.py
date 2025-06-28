@@ -41,16 +41,26 @@ class AbstractCar:
     def draw(self, win):
         blit_rotate_center(win, self.img, (self.x, self.y), self.angle)
 
-    def move_forward(self):
-        self.vel = min(self.vel + self.acceleration, self.max_vel)
+    def move_forward(self,grid_node):
+
+        if grid_node is not None:
+            max_speed=grid_node.get_speed_limit_for_car(self.vehicle,self.max_vel)
+            self.vel = min(self.vel + self.acceleration, max_speed)
+            print(f"current speed {self.vel} --- current max speed {max_speed}")
+        else:
+            self.vel = min(self.vel + self.acceleration, self.max_vel)
         self.move()
 
     def move_forward_rl(self,acceleration):
         self.vel = min(self.vel + acceleration, self.max_vel)
         self.move()
 
-    def move_backward(self):
-        self.vel = max(self.vel - self.acceleration, -self.max_vel/2)
+    def move_backward(self,grid_node):
+        if grid_node is not None:
+            max_speed=grid_node.get_speed_limit_for_car(self.vehicle,self.max_vel)
+            self.vel = max(self.vel - self.acceleration,-max_speed/2)
+        else:
+            self.vel = max(self.vel - self.acceleration, -self.max_vel/2)
         self.move()
 
     def move(self):
