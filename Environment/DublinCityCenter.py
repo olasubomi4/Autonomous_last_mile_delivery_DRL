@@ -145,12 +145,12 @@ class DublinCityCenter:
     #
     #     win.blit(self.delivery_location, (closest_delivery[0] - offset_x, closest_delivery[1] - offset_y))
 
-    def init_delivery_queue(self,deliveries,player_car):
+    def init_delivery_queue(self,deliveries,player_car,grid):
         if len(self.delivery_queue)>0:
             self.delivery_queue.clear()
         for delivery in deliveries:
             if delivery.delivery_state == DeliveryStates.PENDING or delivery.delivery_state == DeliveryStates.PREPARING:
-                heapq.heappush(self.delivery_queue,(self.get_rider_distance_from_delivery(delivery,player_car),delivery))
+                heapq.heappush(self.delivery_queue,(self.get_rider_cost_distance_from_delivery(delivery,player_car,grid),delivery))
 
     def get_closest_delivery(self,player_car):
         print(heapq.nsmallest(len(self.delivery_queue),self.delivery_queue))
@@ -169,9 +169,19 @@ class DublinCityCenter:
         start_time = time.time()
         return obstacles, deliveries, start_time
 
-    def get_rider_distance_from_delivery(self,delivery:Delivery,player_car):
+
+    def get_rider_cost_distance_from_delivery(self,delivery:Delivery,player_car,grid:Grid):
         delivery_destination = delivery.delivery_destination
-        return utils.manhattan_distance(player_car.x//Grid.CELL_SIZE,player_car.y//Grid.CELL_SIZE,delivery_destination.x,delivery_destination.y)
+        result =grid.a_star_path_planning((int(player_car.x),int(player_car.y)),delivery_destination,player_car.vehicle)
+        if result is not None:
+            return result[1]
+        max_int_value=  10 ** 100
+        return max_int_value
+
+
+    # def get_rider_distance_from_delivery(self,delivery:Delivery,player_car):
+    #     delivery_destination = delivery.delivery_destination
+    #     return utils.manhattan_distance(player_car.x//Grid.CELL_SIZE,player_car.y//Grid.CELL_SIZE,delivery_destination.x,delivery_destination.y)
 
 
 

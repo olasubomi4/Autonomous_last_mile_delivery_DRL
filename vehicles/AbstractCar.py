@@ -7,7 +7,7 @@ from vehicles import Delivery
 
 
 class AbstractCar:
-    def __init__(self, max_vel, rotation_vel,img,start_pos):
+    def __init__(self, max_vel, rotation_vel,img,start_pos,vehicle):
         self.img = img
         self.max_vel = max_vel
         self.vel = 0
@@ -18,6 +18,7 @@ class AbstractCar:
         self.original_image = img
         self.rect = self.img.get_rect(center=(400, 300))
         self.start_pos = start_pos
+        self.vehicle=vehicle
 
      #for rl the rotation_speed can be considered as the steering angle.
     def rotate(self, left=False, right=False, rotation_speed=-5):

@@ -54,7 +54,7 @@ next_level = False
 start_time = time.time()
 start=True
 target_delivery =tuple([])
-env.init_delivery_queue(deliveries,player_car)
+env.init_delivery_queue(deliveries,player_car,grid)
 start2=True
 while run:
 
@@ -81,13 +81,15 @@ while run:
     clock.tick(FPS)
 
     if next_level:
-        env.init_delivery_queue(deliveries, player_car)
+        env.init_delivery_queue(deliveries, player_car,grid)
         target_delivery = env.get_closest_delivery(player_car)
         env.update_delivery_state_after_finding_tagret(deliveries, target_delivery)
         # env.draw(WIN, images, player_car, obstacles, deliveries)
-        path = grid.a_star_path_planning((int(player_car.x), int(player_car.y)), target_delivery[1].delivery_destination,
-                                         Vehicles.CAR)
-        env.draw(WIN, images, player_car, obstacles, deliveries, path=path)
+        # path = grid.a_star_path_planning((int(player_car.x), int(player_car.y)), target_delivery[1].delivery_destination,
+        #                                  Vehicles.CAR)
+        # env.draw(WIN, images, player_car, obstacles, deliveries, path=path)
+        env.draw(WIN, images, player_car, obstacles, deliveries)
+
 
         next_level = False
 
@@ -102,16 +104,16 @@ while run:
         # print("grid dumped")
         # grid=joblib.load("grid.pkl")
         # grid.load_existing_grid()
-        path= grid.a_star_path_planning((player_car.x,player_car.y),target_delivery[1].delivery_destination,Vehicles.CAR)
+        # path= grid.a_star_path_planning((player_car.x,player_car.y),target_delivery[1].delivery_destination,Vehicles.CAR)
 
-        if path is not None:
-            joblib.dump(path,"path.pkl")
-            clock.tick(FPS)
-            env.draw(WIN, images, player_car, obstacles, deliveries,path=path)
-            # for point in path:
-            #     pygame.draw.rect(TRACK, (0, 255, 0), (point[0], point[1], 1, 1))
-            #     pygame.display.update()
-            print("path dumped")
+        # if path is not None:
+        #     joblib.dump(path,"path.pkl")
+        #     clock.tick(FPS)
+        #     env.draw(WIN, images, player_car, obstacles, deliveries,path=path)
+        #     # for point in path:
+        #     #     pygame.draw.rect(TRACK, (0, 255, 0), (point[0], point[1], 1, 1))
+        #     #     pygame.display.update()
+        #     print("path dumped")
         start2=False
 
 
