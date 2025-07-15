@@ -1,10 +1,8 @@
 import pygame
 
 from DeliveryStates import DeliveryStates
-import utils
 from Environment.Grid import Grid
-from Environment.GridNode import GridNode
-from utils import scale_image, blit_rotate_center
+from utils import blit_rotate_center
 import random
 import time
 import heapq
@@ -34,12 +32,10 @@ class DublinCityCenter:
 
         return TRACK_BORDER_MASK,OBSTACLE_MASK,DELIVERY_LOCATION_MASK
 
-    def draw(self, win, images, player_car, obstacles=None, deliveries=None,path=None):
+    def draw(self, win, images, delivery_vehicle, obstacles=None, deliveries=None,path=None):
         # Calculate camera offset
-
-
-        offset_x = player_car.x - self.win.get_width() / 2
-        offset_y = player_car.y - self.win.get_height() / 2
+        offset_x = delivery_vehicle.x - self.win.get_width() / 2
+        offset_y = delivery_vehicle.y - self.win.get_height() / 2
 
         # Clamp the offset so we don’t scroll beyond the map
         max_x = self.track.get_width() - self.win.get_width()
@@ -49,7 +45,6 @@ class DublinCityCenter:
         offset_y = max(0, min(offset_y, max_y))
 
         # Draw each image with the offset applied
-
         if path is not None:
             self.track.blit(self.track_clone, (0, 0))
 
@@ -74,48 +69,46 @@ class DublinCityCenter:
                 # pygame.display.update()
 
         # Always draw the car at window center (or appropriate offset if clamped at edge)
-        car_draw_x = player_car.x - offset_x
-        car_draw_y = player_car.y - offset_y
-        blit_rotate_center(win, player_car.img, (car_draw_x, car_draw_y), player_car.angle)
+        car_draw_x = delivery_vehicle.x - offset_x
+        car_draw_y = delivery_vehicle.y - offset_y
+        blit_rotate_center(win, delivery_vehicle.img, (car_draw_x, car_draw_y), delivery_vehicle.angle)
 
         pygame.display.update()
 
 
-        # pygame.display.update()
 
-
-    def move_player(self,player_car,grid):
+    def move_player(self,delivery_vehicle,grid):
         keys = pygame.key.get_pressed()
         moved = False
 
         if keys[pygame.K_a]:
-            player_car.rotate(left=True)
+            delivery_vehicle.rotate(left=True)
         if keys[pygame.K_d]:
-            player_car.rotate(right=True)
+            delivery_vehicle.rotate(right=True)
         if keys[pygame.K_w]:
             moved = True
-            grid_node = grid.grid[int(player_car.x) // Grid.CELL_SIZE][int(player_car.y) // Grid.CELL_SIZE]
+            grid_node = grid.grid[int(delivery_vehicle.x) // Grid.CELL_SIZE][int(delivery_vehicle.y) // Grid.CELL_SIZE]
 
-            player_car.move_forward(grid_node)
+            delivery_vehicle.move_forward(grid_node)
         if keys[pygame.K_s]:
             moved = True
-            grid_node = grid.grid[int(player_car.x) // Grid.CELL_SIZE][int(player_car.y) // Grid.CELL_SIZE]
-            player_car.move_backward(grid_node)
+            grid_node = grid.grid[int(delivery_vehicle.x) // Grid.CELL_SIZE][int(delivery_vehicle.y) // Grid.CELL_SIZE]
+            delivery_vehicle.move_backward(grid_node)
 
         if not moved:
-            player_car.reduce_speed()
+            delivery_vehicle.reduce_speed()
 
     def isObstacleOnTheWay(self,obstacle):
         offset = (obstacle[0], obstacle[1])
         poi = self.track_border_mask.overlap(self.obstacle_mask, offset)
         return poi
 
-    def generate_obstacles(self,grid,player_start_pos,num_obstacles: int = 10):
+    def generate_obstacles(self,grid,delivery_vehicle_start_pos,num_obstacles: int = 10):
         obstacles = []
         i = 0
         while i < num_obstacles:
-            player_start_pos_x,player_start_pos_y =player_start_pos[0]//Grid.CELL_SIZE,player_start_pos[1]//Grid.CELL_SIZE
-            start_pos_grid_node = grid.grid[player_start_pos_x][player_start_pos_y]
+            delivery_vehicle_start_pos_x,delivery_vehicle_start_pos_y = delivery_vehicle_start_pos[0] // Grid.CELL_SIZE, delivery_vehicle_start_pos[1] // Grid.CELL_SIZE
+            start_pos_grid_node = grid.grid[delivery_vehicle_start_pos_x][delivery_vehicle_start_pos_y]
             x = random.randint(0, grid.width-1)
             y = random.randint(0, grid.height-1)
             try :
@@ -128,12 +121,12 @@ class DublinCityCenter:
                 print(f"error at {x} -{y}")
         return obstacles
 
-    def generate_deliveries(self,grid,player_start_pos,num_deliveries: int = 4, obstacles=[]):
+    def generate_deliveries(self,grid,delivery_vehicle_start_pos,num_deliveries: int = 4, obstacles=[]):
         deliveries = []
         i = 0
         while i < num_deliveries:
-            player_start_pos_x,player_start_pos_y =player_start_pos[0]//Grid.CELL_SIZE,player_start_pos[1]//Grid.CELL_SIZE
-            start_pos_grid_node = grid.grid[player_start_pos_x][player_start_pos_y]
+            delivery_vehicle_start_pos_x,delivery_vehicle_start_pos_y = delivery_vehicle_start_pos[0] // Grid.CELL_SIZE, delivery_vehicle_start_pos[1] // Grid.CELL_SIZE
+            start_pos_grid_node = grid.grid[delivery_vehicle_start_pos_x][delivery_vehicle_start_pos_y]
             x = random.randint(0, grid.width - 1)
             y = random.randint(0, grid.height - 1)
             delivery_grid_node = grid.grid[x][y]
@@ -147,35 +140,18 @@ class DublinCityCenter:
         # deliveries.append((1800,600)) - trinity location
         return deliveries
 
-    # def draw_closest_delivery_locations(self,win,deliveries,player_car,closest_delivery=None):
-    #     # Calculate camera offset
-    #     offset_x = player_car.x - self.win.get_width() / 2
-    #     offset_y = player_car.y - self.win.get_height() / 2
-    #
-    #     # Clamp the offset so we don’t scroll beyond the map
-    #     max_x = self.track.get_width() - self.win.get_width()
-    #     max_y = self.track.get_height() - self.win.get_height()
-    #
-    #     offset_x = max(0, min(offset_x, max_x))
-    #     offset_y = max(0, min(offset_y, max_y))
-    #
-    #     time.sleep(10)
-    #
-    #     win.blit(self.delivery_location, (closest_delivery[0] - offset_x, closest_delivery[1] - offset_y))
-
-    def init_delivery_queue(self,deliveries,player_car,grid):
+    def init_delivery_queue(self,deliveries,delivery_vehicle,grid):
         if len(self.delivery_queue)>0:
             self.delivery_queue.clear()
         for delivery in deliveries:
             if delivery.delivery_state == DeliveryStates.PENDING or delivery.delivery_state == DeliveryStates.PREPARING:
-                cost_from_distance =self.get_rider_cost_distance_from_delivery(delivery, player_car, grid)
+                cost_from_distance = self.get_rider_cost_distance_from_delivery(delivery, delivery_vehicle, grid)
                 heapq.heappush(self.delivery_queue,(cost_from_distance[1],delivery,cost_from_distance[0]))
 
-    def get_closest_delivery(self,player_car):
+    def get_closest_delivery(self,delivery_vehicle):
         print(heapq.nsmallest(len(self.delivery_queue),self.delivery_queue))
-        # time.sleep(10)
-        a=heapq.heappop(self.delivery_queue)
-        return a
+        closest_delivery=heapq.heappop(self.delivery_queue)
+        return closest_delivery
 
     def update_delivery_state_after_finding_tagret(self,deliveries,target_delivery):
         target_delivery[1].delivery_state = DeliveryStates.IN_PROGRESS
@@ -183,25 +159,21 @@ class DublinCityCenter:
             if delivery.delivery_state == DeliveryStates.PREPARING:
                 delivery.delivery_state = DeliveryStates.PENDING
 
-    def reset(self,grid,player_start_pos):
-        obstacles = self.generate_obstacles(grid, player_start_pos, num_obstacles=10)
-        deliveries = self.generate_deliveries(grid,player_start_pos)
+    def reset(self,grid,delivery_vehicle_start_pos):
+        obstacles = self.generate_obstacles(grid, delivery_vehicle_start_pos, num_obstacles=10)
+        deliveries = self.generate_deliveries(grid, delivery_vehicle_start_pos)
         start_time = time.time()
         return obstacles, deliveries, start_time
 
 
-    def get_rider_cost_distance_from_delivery(self,delivery:Delivery,player_car,grid:Grid):
+    def get_rider_cost_distance_from_delivery(self,delivery:Delivery,delivery_vehicle,grid:Grid):
         delivery_destination = delivery.delivery_destination
-        result =grid.a_star_path_planning((int(player_car.x),int(player_car.y)),delivery_destination,player_car.vehicle)
+        result =grid.a_star_path_planning((int(delivery_vehicle.x), int(delivery_vehicle.y)), delivery_destination, delivery_vehicle.vehicle)
         if result is not None:
             return result
         max_int_value=  10 ** 100
         return [],max_int_value
 
-
-    # def get_rider_distance_from_delivery(self,delivery:Delivery,player_car):
-    #     delivery_destination = delivery.delivery_destination
-    #     return utils.manhattan_distance(player_car.x//Grid.CELL_SIZE,player_car.y//Grid.CELL_SIZE,delivery_destination.x,delivery_destination.y)
 
 
 

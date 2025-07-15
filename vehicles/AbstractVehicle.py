@@ -6,7 +6,7 @@ import math
 from vehicles import Delivery
 
 
-class AbstractCar:
+class AbstractVehicle:
     def __init__(self, max_vel, rotation_vel,img,start_pos,vehicle):
         self.img = img
         self.max_vel = max_vel

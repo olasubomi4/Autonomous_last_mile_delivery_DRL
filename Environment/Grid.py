@@ -2,7 +2,7 @@ import joblib
 
 from Environment.Color import Color
 from Environment.GridNode import GridNode
-from vehicles.PlayerCar import PlayerCar
+from vehicles.Car import Car
 from utils import scale_image, blit_rotate_center
 import pygame
 import heapq
@@ -21,46 +21,9 @@ class Grid:
         self.width = len(self.grid)
         self.height = len(self.grid[0])
 
-    def draw_grid_lines(self, screen):
-        for x in range(0, self.width * Grid.CELL_SIZE, Grid.CELL_SIZE):
-            pygame.draw.line(screen, (200, 200, 200), (x, 0), (x, self.height * Grid.CELL_SIZE), 1)
-        for y in range(0, self.height * Grid.CELL_SIZE, Grid.CELL_SIZE):
-            pygame.draw.line(screen, (200, 200, 200), (0, y), (self.width * Grid.CELL_SIZE, y), 1)
-
-    # def generate_grid(self,RED_CAR,TRACK_BORDER_MASK):
-    #     car = PlayerCar(RED_CAR, (0, 0), 3, 8)
-    #     for i in range(self.width):
-    #         for j in range(self.height):
-    #             current_grid_node = self.grid[i][j]
-    #             current_grid_color= self.track.convert().get_at((i,j))
-    #             car.x, car.y = i, j
-    #             if current_grid_color is not None and current_grid_color == Color.BLACK.value and car.collide(TRACK_BORDER_MASK):
-    #                 current_grid_node.is_road=True
-    #                 current_grid_node.color=Color.BLACK.value
-    #                 self.grid[i][j]=current_grid_node
-    #     return self.grid
-    # def generate_grid(self, RED_CAR, TRACK_BORDER_MASK):
-    #     track_surface = self.track.convert()
-    #     car = PlayerCar(RED_CAR, (0, 0), 3, 8)
-    #     for i in range(self.width):
-    #         for j in range(self.height):
-    #             x = i * Grid.CELL_SIZE
-    #             y = j * Grid.CELL_SIZE
-    #             current_grid_node = self.grid[i][j]
-    #             current_grid_color = track_surface.get_at((x, y))
-    #
-    #             car.x, car.y = x, y
-    #             if (current_grid_color is not None) and current_grid_color == Color.BLACK.value  and car.collide(TRACK_BORDER_MASK) is None:
-    #             # if  current_grid_color == Color.BLACK.value:
-    #             # if car.collide(TRACK_BORDER_MASK) is None:
-    #                 current_grid_node.is_road = True
-    #                 current_grid_node.is_blocked=False
-    #                 current_grid_node.color = Color.BLACK.value
-    #     return self.grid
-
     def generate_grid(self, RED_CAR, TRACK_BORDER_MASK):
         track_surface = self.track.convert()
-        temp_car = PlayerCar(RED_CAR, (0, 0), max_vel=3, rotation_vel=8)
+        temp_car = Car(RED_CAR, (0, 0), max_vel=3, rotation_vel=8)
         car_mask = pygame.mask.from_surface(temp_car.IMG)
         car_width = temp_car.IMG.get_width()
         car_height = temp_car.IMG.get_height()
@@ -90,29 +53,8 @@ class Grid:
 
         return self.grid
 
-    # def get_grid_node(self,x,y,obstacles,RED_CAR):
-    #     car=PlayerCar(RED_CAR, (x, y), 3, 8)
-    #     for i in range(self.width):
-    #         for j in range(self.height):
-    #             car.x,car.y=i,j
-    #             if self.grid[i][j].is_road and car.collide_with_obstacle(Grid.OBSTACLE_MASK, obstacles):
-    #                 self.grid[i][j].is_blocked=True
-    #             else:
-    #                 self.grid[i][j].is_blocked=False
-    # def get_grid_node(self,x,y,obstacles,RED_CAR):
-    #     car=PlayerCar(RED_CAR, (x, y), 3, 8)
-    #     for i in range(self.width):
-    #         for j in range(self.height):
-    #             x = i * Grid.CELL_SIZE
-    #             y = j * Grid.CELL_SIZE
-    #             car.x, car.y = x, y
-    #             if self.grid[i][j].is_road:
-    #                 self.grid[i][j].is_blocked = car.collide_with_obstacle(Grid.OBSTACLE_MASK, obstacles)
-    #             else:
-    #                 self.grid[i][j].is_blocked = True
-
     def get_grid_node(self, x, y, obstacles, RED_CAR):
-        temp_car = PlayerCar(RED_CAR, (x, y), max_vel=3, rotation_vel=8)
+        temp_car = Car(RED_CAR, (x, y), max_vel=3, rotation_vel=8)
         car_mask = pygame.mask.from_surface(temp_car.IMG)
         car_width = temp_car.IMG.get_width()
         car_height = temp_car.IMG.get_height()
