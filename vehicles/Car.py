@@ -1,10 +1,12 @@
-from vehicles.AbstractCar import AbstractCar
+from vehicles.AbstractVehicle import AbstractVehicle
+from vehicles.Vehicle import Vehicles
 
-class PlayerCar(AbstractCar):
+
+class Car(AbstractVehicle):
     START_POS = (155, 370)
 
     def __init__(self, img, start_pos, max_vel, rotation_vel):
-        super().__init__(max_vel, rotation_vel,img,start_pos)
+        super().__init__(max_vel, rotation_vel,img,start_pos,Vehicles.CAR)
         self.IMG = img
         self.x, self.y = start_pos
 

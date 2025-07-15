@@ -6,8 +6,8 @@ import math
 from vehicles import Delivery
 
 
-class AbstractCar:
-    def __init__(self, max_vel, rotation_vel,img,start_pos):
+class AbstractVehicle:
+    def __init__(self, max_vel, rotation_vel,img,start_pos,vehicle):
         self.img = img
         self.max_vel = max_vel
         self.vel = 0
@@ -18,6 +18,7 @@ class AbstractCar:
         self.original_image = img
         self.rect = self.img.get_rect(center=(400, 300))
         self.start_pos = start_pos
+        self.vehicle=vehicle
 
      #for rl the rotation_speed can be considered as the steering angle.
     def rotate(self, left=False, right=False, rotation_speed=-5):
@@ -40,16 +41,26 @@ class AbstractCar:
     def draw(self, win):
         blit_rotate_center(win, self.img, (self.x, self.y), self.angle)
 
-    def move_forward(self):
-        self.vel = min(self.vel + self.acceleration, self.max_vel)
+    def move_forward(self,grid_node):
+
+        if grid_node is not None:
+            max_speed=grid_node.get_speed_limit_for_car(self.vehicle,self.max_vel)
+            self.vel = min(self.vel + self.acceleration, max_speed)
+            print(f"current speed {self.vel} --- current max speed {max_speed}")
+        else:
+            self.vel = min(self.vel + self.acceleration, self.max_vel)
         self.move()
 
     def move_forward_rl(self,acceleration):
         self.vel = min(self.vel + acceleration, self.max_vel)
         self.move()
 
-    def move_backward(self):
-        self.vel = max(self.vel - self.acceleration, -self.max_vel/2)
+    def move_backward(self,grid_node):
+        if grid_node is not None:
+            max_speed=grid_node.get_speed_limit_for_car(self.vehicle,self.max_vel)
+            self.vel = max(self.vel - self.acceleration,-max_speed/2)
+        else:
+            self.vel = max(self.vel - self.acceleration, -self.max_vel/2)
         self.move()
 
     def move(self):
@@ -68,13 +79,13 @@ class AbstractCar:
 
     def collide_with_obstacle(self, obstacle_mask, obstacles):
         for obstacle in obstacles:
-            if self.collide(obstacle_mask, obstacle[0], obstacle[1]) != None:
+            if self.collide(obstacle_mask, obstacle.x, obstacle.y) is not None:
                 return True
         return False
 
     def is_delivery_completed(self, delivery_mask, target_delivery:Delivery):
         target_delivery_location= target_delivery[1].delivery_destination
-        if self.collide(delivery_mask, target_delivery_location[0], target_delivery_location[1]) != None:
+        if self.collide(delivery_mask, target_delivery_location.x, target_delivery_location.y) != None:
             return True
         return False
 

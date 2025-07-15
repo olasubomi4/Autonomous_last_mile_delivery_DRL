@@ -2,19 +2,17 @@ import joblib
 
 from Environment.Color import Color
 from Environment.GridNode import GridNode
-from vehicles.PlayerCar import PlayerCar
+from vehicles.Car import Car
 from utils import scale_image, blit_rotate_center
 import pygame
 import heapq
 from utils import manhattan_distance
 
 class Grid:
-    OBSTACLE = scale_image(pygame.image.load("imgs/obstacle8.png"), 0.05)
+    OBSTACLE = scale_image(pygame.image.load("imgs/obstacle8.png"), 0.02)
     OBSTACLE_MASK = pygame.mask.from_surface(OBSTACLE)
-    CELL_SIZE=15
+    CELL_SIZE=6
     def __init__(self, width, height,track):
-        # self.width = width
-        # self.height = height
         self.grid = [
             [GridNode(i, j, Color.RED.value) for j in range(0, height, Grid.CELL_SIZE)]
             for i in range(0, width, Grid.CELL_SIZE)
@@ -22,24 +20,14 @@ class Grid:
         self.track=track
         self.width = len(self.grid)
         self.height = len(self.grid[0])
-        # self.visualize_grid()
 
-
-    # def generate_grid(self,RED_CAR,TRACK_BORDER_MASK):
-    #     car = PlayerCar(RED_CAR, (0, 0), 3, 8)
-    #     for i in range(self.width):
-    #         for j in range(self.height):
-    #             current_grid_node = self.grid[i][j]
-    #             current_grid_color= self.track.convert().get_at((i,j))
-    #             car.x, car.y = i, j
-    #             if current_grid_color is not None and current_grid_color == Color.BLACK.value and car.collide(TRACK_BORDER_MASK):
-    #                 current_grid_node.is_road=True
-    #                 current_grid_node.color=Color.BLACK.value
-    #                 self.grid[i][j]=current_grid_node
-    #     return self.grid
     def generate_grid(self, RED_CAR, TRACK_BORDER_MASK):
         track_surface = self.track.convert()
-        car = PlayerCar(RED_CAR, (0, 0), 3, 8)
+        temp_car = Car(RED_CAR, (0, 0), max_vel=3, rotation_vel=8)
+        car_mask = pygame.mask.from_surface(temp_car.IMG)
+        car_width = temp_car.IMG.get_width()
+        car_height = temp_car.IMG.get_height()
+
         for i in range(self.width):
             for j in range(self.height):
                 x = i * Grid.CELL_SIZE
@@ -47,49 +35,65 @@ class Grid:
                 current_grid_node = self.grid[i][j]
                 current_grid_color = track_surface.get_at((x, y))
 
-                car.x, car.y = x, y
-                if current_grid_color is not None and current_grid_color == Color.BLACK.value and not car.collide(
-                        TRACK_BORDER_MASK):
+                if current_grid_color != Color.BLACK.value and current_grid_color != Color.BLUE.value :
+                    continue
+
+                # Position the car's top-left so that its center is at (x, y)
+                car_x = x - car_width // 2
+                car_y = y - car_height // 2
+
+                # Check collision against track border
+                offset = (int(car_x - 0), int(car_y - 0))  # Assuming TRACK_BORDER at (0, 0)
+                collision = TRACK_BORDER_MASK.overlap(car_mask, offset)
+
+                if not collision:
                     current_grid_node.is_road = True
-                    current_grid_node.color = Color.BLACK.value
+                    current_grid_node.is_blocked = False
+                    current_grid_node.color = current_grid_color
+
         return self.grid
 
-    # def get_grid_node(self,x,y,obstacles,RED_CAR):
-    #     car=PlayerCar(RED_CAR, (x, y), 3, 8)
-    #     for i in range(self.width):
-    #         for j in range(self.height):
-    #             car.x,car.y=i,j
-    #             if self.grid[i][j].is_road and car.collide_with_obstacle(Grid.OBSTACLE_MASK, obstacles):
-    #                 self.grid[i][j].is_blocked=True
-    #             else:
-    #                 self.grid[i][j].is_blocked=False
-    def get_grid_node(self,x,y,obstacles,RED_CAR):
-        car=PlayerCar(RED_CAR, (x, y), 3, 8)
+    def get_grid_node(self, x, y, obstacles, RED_CAR):
+        temp_car = Car(RED_CAR, (x, y), max_vel=3, rotation_vel=8)
+        car_mask = pygame.mask.from_surface(temp_car.IMG)
+        car_width = temp_car.IMG.get_width()
+        car_height = temp_car.IMG.get_height()
+
         for i in range(self.width):
             for j in range(self.height):
-                x = i * Grid.CELL_SIZE
-                y = j * Grid.CELL_SIZE
-                car.x, car.y = x, y
-                if self.grid[i][j].is_road:
-                    self.grid[i][j].is_blocked = car.collide_with_obstacle(Grid.OBSTACLE_MASK, obstacles)
-                else:
+                x_pixel = i * Grid.CELL_SIZE
+                y_pixel = j * Grid.CELL_SIZE
+
+                if not self.grid[i][j].is_road:
                     self.grid[i][j].is_blocked = True
+                    continue
+
+                # Place car's topleft to center the image at (x_pixel, y_pixel)
+                car_x = x_pixel - car_width // 2
+                car_y = y_pixel - car_height // 2
+                blocked = False
+
+                # Check for collision with each obstacle
+                for obs in obstacles:
+                    offset_x = int(obs.x - car_x)
+                    offset_y = int(obs.y - car_y)
+                    if car_mask.overlap(Grid.OBSTACLE_MASK, (offset_x, offset_y)):
+                        blocked = True
+                        break
+
+                self.grid[i][j].is_blocked = blocked
 
     def load_existing_grid(self):
         self.grid=joblib.load("grid.pkl")
         return self.grid
 
-    def visualize_grid(self):
-        for i in range(self.width):
-            for j in range(self.height):
-                pygame.draw.rect(self.track, self.grid[i][j].color, (i * Grid.CELL_SIZE, j * Grid.CELL_SIZE, Grid.CELL_SIZE, Grid.CELL_SIZE))
-        pygame.display.update()
+
 
     def a_star_path_planning(self,start,goal,vehicle):
         open_set = []
 
         start = (start[0] // Grid.CELL_SIZE, start[1] // Grid.CELL_SIZE)
-        goal = (goal[0] // Grid.CELL_SIZE, goal[1] // Grid.CELL_SIZE)
+        goal = (goal.x // Grid.CELL_SIZE, goal.y// Grid.CELL_SIZE)
 
         heapq.heappush(open_set, (0+ manhattan_distance(start[0],start[1], goal[0],goal[1]), 0, start))
         came_from = {}
@@ -105,14 +109,14 @@ class Grid:
                     current = came_from[current]
                 path.append(start)
                 pixel_path = [(x * Grid.CELL_SIZE, y * Grid.CELL_SIZE) for (x, y) in path[::-1]]
-                return pixel_path
+                return pixel_path,current_cost
+
 
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # 4 directions only
                 neighbor = (current[0] + dx, current[1] + dy)
                 if 0 <= neighbor[0] < self.width and 0 <= neighbor[1] < self.height:
                     neighbor_node = self.grid[neighbor[0]][neighbor[1]]
-                    # if neighbor_node.is_road and neighbor_node.is_blocked==False:
-                    if not neighbor_node.is_blocked:
+                    if neighbor_node.is_blocked==False and neighbor_node.is_road==True:
                         move_cost = self.grid[neighbor[0]][neighbor[1]].get_node_weight(vehicle)
                         tentative_g_score = g_score[current] + move_cost
                         if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
@@ -120,5 +124,4 @@ class Grid:
                             f_score = tentative_g_score + manhattan_distance(neighbor[0], neighbor[1], goal[0], goal[1])
                             heapq.heappush(open_set, (f_score, tentative_g_score, neighbor))
                             came_from[neighbor] = current
-
         return None
