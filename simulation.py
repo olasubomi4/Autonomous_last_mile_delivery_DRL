@@ -3,6 +3,7 @@ import time
 
 from DeliveryStates import DeliveryStates
 from Environment.Grid import Grid
+from Environment.GridNode import GridNode
 from utils import scale_image
 from Environment.DublinCityCenter  import  DublinCityCenter
 from vehicles.Delivery import Delivery
@@ -86,12 +87,19 @@ while run:
             break
 
     env.move_player(delivery_vehicle, grid)
+    sensor_targets= [(OBSTACLE_MASK,obstacles),(TRACK_BORDER_MASK,[grid.grid[0][0]])]
+    sensor_result=delivery_vehicle.update_sensors(sensor_targets)
+    # print(sensor_result)
+
+    delivery_vehicle.draw_sensors(WIN)
 
     if delivery_vehicle.collide(TRACK_BORDER_MASK):
         delivery_vehicle.bounce()
+        # pass
 
     if delivery_vehicle.collide_with_obstacle(OBSTACLE_MASK, obstacles):
         delivery_vehicle.reset()
+        # pass
 
     if delivery_vehicle.is_delivery_completed(DELIVERY_LOCATION_MASK, target_delivery) and delivery_vehicle.vel==0:
         next_level = True

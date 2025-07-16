@@ -19,8 +19,12 @@ class AbstractVehicle:
         self.rect = self.img.get_rect(center=(400, 300))
         self.start_pos = start_pos
         self.vehicle=vehicle
+        self.sensor_angles = [120,90,70]
+        self.sensor_max_len = 40                 # pixels
+        self.sensor_values = [self.sensor_max_len] * len(self.sensor_angles)
+        self.car_center=self.rect.center
 
-     #for rl the rotation_speed can be considered as the steering angle.
+        #for rl the rotation_speed can be considered as the steering angle.
     def rotate(self, left=False, right=False, rotation_speed=-5):
         rotation_speed=abs(rotation_speed)
         if left:
@@ -39,14 +43,14 @@ class AbstractVehicle:
     #     self.rect = self.image.get_rect(center=self.rect.center)
 
     def draw(self, win):
-        blit_rotate_center(win, self.img, (self.x, self.y), self.angle)
+        self.car_center=blit_rotate_center(win, self.img, (self.x, self.y), self.angle)
 
     def move_forward(self,grid_node):
 
         if grid_node is not None:
             max_speed=grid_node.get_speed_limit_for_car(self.vehicle,self.max_vel)
             self.vel = min(self.vel + self.acceleration, max_speed)
-            print(f"current speed {self.vel} --- current max speed {max_speed}")
+            # print(f"current speed {self.vel} --- current max speed {max_speed}")
         else:
             self.vel = min(self.vel + self.acceleration, self.max_vel)
         self.move()
@@ -71,7 +75,7 @@ class AbstractVehicle:
         self.y -= vertical
         self.x -= horizontal
 
-    def  collide(self, mask, x=0, y=0):
+    def collide(self, mask, x=0, y=0):
         car_mask = pygame.mask.from_surface(self.img)
         offset = (int(self.x - x), int(self.y - y))
         poi = mask.overlap(car_mask, offset)
@@ -94,3 +98,42 @@ class AbstractVehicle:
         self.x, self.y = self.start_pos
         self.angle = 0
         self.vel = 0
+
+    def _cast_single_sensor(self, angle, sensor_targets):
+        #I need to positions of the things I am looking for
+        rad = math.radians(self.angle + angle)
+        hypotenuse_x, hypotenuse_y = math.cos(rad), math.sin(rad)
+
+        x, y = self.x + self.img.get_width() // 2, self.y + self.img.get_height() // 2
+        is_hit=False
+        for d in range(0, self.sensor_max_len, 2):
+            for sensor_target in sensor_targets:
+                m, positions = sensor_target
+                for a in positions:
+                    # I perform offset subtraction here
+                    px, py = int(x + hypotenuse_x * d)-a.x , int(y - hypotenuse_y * d)-a.y
+                    # for m in masks:
+                    if 0 <= px < m.get_size()[0] and 0 <= py < m.get_size()[1]:
+                        if m.get_at((px, py)):
+                            is_hit=True
+                            return d,angle,is_hit
+        return self.sensor_max_len,angle,is_hit
+
+    def update_sensors(self, sensor_targets):
+
+        result= [self._cast_single_sensor(a, sensor_targets)
+                              for a in self.sensor_angles]
+        self.sensor_values = [distance for distance, _, _ in result]
+        return result
+
+    def draw_sensors(self, win):
+        x0 = self.car_center[0]
+        y0 = self.car_center[1]
+
+        for ang, dist in zip(self.sensor_angles, self.sensor_values):
+            rad = math.radians(self.angle + ang)
+            x1 = x0 + math.cos(rad) * dist
+            y1 = y0 - math.sin(rad) * dist
+            pygame.draw.line(win, (255, 255, 225), (x0, y0), (x1, y1), 2)
+            pygame.draw.circle(win, (255, 50, 50), (int(x1), int(y1)), 3)
+            pygame.display.update()
