@@ -3,7 +3,6 @@ import time
 
 from DeliveryStates import DeliveryStates
 from Environment.Grid import Grid
-from Environment.GridNode import GridNode
 from utils import scale_image
 from Environment.DublinCityCenter  import  DublinCityCenter
 from vehicles.Delivery import Delivery
@@ -52,8 +51,8 @@ start=True
 target_delivery =tuple([])
 env.init_delivery_queue(deliveries, delivery_vehicle, grid)
 while run:
-
     env.draw(WIN, images, delivery_vehicle, obstacles, deliveries)
+    #RESET/ done
     if  deliveries_pending<=0:
         delivery_vehicle.reset()
         obstacles, deliveries, start_time = env.reset(grid, player_start_pos)
@@ -62,6 +61,7 @@ while run:
         print("Resetting")
 
     if start:
+        #init
         env.draw(WIN, images, delivery_vehicle, obstacles, deliveries)
         time.sleep(5)
         target_delivery = env.get_closest_delivery(delivery_vehicle)
@@ -70,8 +70,9 @@ while run:
         env.draw(WIN, images, delivery_vehicle, obstacles, deliveries, path=target_delivery_path)
         start=False
 
-    clock.tick(FPS)
 
+
+    #STEP ON A SPECIFIC CONDITION
     if next_level:
         env.init_delivery_queue(deliveries, delivery_vehicle, grid)
         target_delivery = env.get_closest_delivery(delivery_vehicle)
@@ -86,7 +87,8 @@ while run:
             run = False
             break
 
-    env.move_player(delivery_vehicle, grid)
+    env.move_vehicle(delivery_vehicle, grid)
+    #NORMAL STEP
     sensor_targets= [(OBSTACLE_MASK,obstacles),(TRACK_BORDER_MASK,[grid.grid[0][0]])]
     sensor_result=delivery_vehicle.update_sensors(sensor_targets)
     # print(sensor_result)

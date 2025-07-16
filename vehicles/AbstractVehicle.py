@@ -32,6 +32,19 @@ class AbstractVehicle:
         elif right:
             self.angle -= min(rotation_speed, self.rotation_vel)
 
+    def rotate_rl (self, rotation_speed=-5):
+        isLeft=False
+        if rotation_speed<0:
+            isLeft=True
+        rotation_speed=abs(rotation_speed)
+        if isLeft:
+            self.angle += min(rotation_speed, self.rotation_vel)
+        else:
+            self.angle -= min(rotation_speed, self.rotation_vel)
+
+        # if self.angle is None or :
+        #     print("angle is none")
+
     # def rotate(self, left=False, right=False,rotation_speed=-1):
     #     rotation_speed=abs(rotation_speed)
     #     if left:
@@ -55,8 +68,13 @@ class AbstractVehicle:
             self.vel = min(self.vel + self.acceleration, self.max_vel)
         self.move()
 
-    def move_forward_rl(self,acceleration):
-        self.vel = min(self.vel + acceleration, self.max_vel)
+    def move_forward_rl(self,acceleration,grid_node):
+        if grid_node is not None:
+            max_speed = grid_node.get_speed_limit_for_car(self.vehicle, self.max_vel)
+            self.vel = min(self.vel + acceleration, max_speed)
+            # print(f"current speed {self.vel} --- current max speed {max_speed}")
+        else:
+            self.vel = min(self.vel + acceleration, self.max_vel)
         self.move()
 
     def move_backward(self,grid_node):
@@ -65,6 +83,15 @@ class AbstractVehicle:
             self.vel = max(self.vel - self.acceleration,-max_speed/2)
         else:
             self.vel = max(self.vel - self.acceleration, -self.max_vel/2)
+        self.move()
+
+    def move_backward_rl(self, acceleration, grid_node):
+        if grid_node is not None:
+            max_speed = grid_node.get_speed_limit_for_car(self.vehicle, self.max_vel)
+            self.vel = max(self.vel + acceleration, max_speed)
+            # print(f"current speed {self.vel} --- current max speed {max_speed}")
+        else:
+            self.vel = max(self.vel + acceleration, self.max_vel)
         self.move()
 
     def move(self):
@@ -105,18 +132,23 @@ class AbstractVehicle:
         hypotenuse_x, hypotenuse_y = math.cos(rad), math.sin(rad)
 
         x, y = self.x + self.img.get_width() // 2, self.y + self.img.get_height() // 2
-        is_hit=False
+        is_hit=0
         for d in range(0, self.sensor_max_len, 2):
             for sensor_target in sensor_targets:
                 m, positions = sensor_target
                 for a in positions:
+                    try:
                     # I perform offset subtraction here
-                    px, py = int(x + hypotenuse_x * d)-a.x , int(y - hypotenuse_y * d)-a.y
-                    # for m in masks:
-                    if 0 <= px < m.get_size()[0] and 0 <= py < m.get_size()[1]:
-                        if m.get_at((px, py)):
-                            is_hit=True
-                            return d,angle,is_hit
+                        px, py = int(x + hypotenuse_x * d)-a.x , int(y - hypotenuse_y * d)-a.y
+                        # for m in masks:
+                        if 0 <= px < m.get_size()[0] and 0 <= py < m.get_size()[1]:
+                            if m.get_at((px, py)):
+                                is_hit=1
+                                return d,angle,is_hit
+                    except Exception as e:
+                        print(f"error at {a}")
+                        print(e)
+                        continue
         return self.sensor_max_len,angle,is_hit
 
     def update_sensors(self, sensor_targets):

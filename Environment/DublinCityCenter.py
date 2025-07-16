@@ -77,7 +77,7 @@ class DublinCityCenter:
 
 
 
-    def move_player(self,delivery_vehicle,grid):
+    def move_vehicle(self,delivery_vehicle,grid):
         keys = pygame.key.get_pressed()
         moved = False
 
@@ -95,6 +95,23 @@ class DublinCityCenter:
             grid_node = grid.grid[int(delivery_vehicle.x) // Grid.CELL_SIZE][int(delivery_vehicle.y) // Grid.CELL_SIZE]
             delivery_vehicle.move_backward(grid_node)
 
+        if not moved:
+            delivery_vehicle.reduce_speed()
+
+    def move_vehicle_rl(self,delivery_vehicle,grid,steering_action,acceleration_action):
+        moved = False
+
+        if steering_action!=0:
+            delivery_vehicle.rotate_rl(steering_action)
+
+        if  acceleration_action!=0:
+            moved = True
+            is_move_forward = acceleration_action>0
+            grid_node = grid.grid[int(delivery_vehicle.x) // Grid.CELL_SIZE][int(delivery_vehicle.y) // Grid.CELL_SIZE]
+            if is_move_forward:
+                delivery_vehicle.move_forward_rl(acceleration_action,grid_node)
+            else:
+                delivery_vehicle.move_backward_rl(acceleration_action,grid_node)
         if not moved:
             delivery_vehicle.reduce_speed()
 
