@@ -71,7 +71,7 @@ class DublinCityCenter:
         # Always draw the car at window center (or appropriate offset if clamped at edge)
         car_draw_x = delivery_vehicle.x - offset_x
         car_draw_y = delivery_vehicle.y - offset_y
-        blit_rotate_center(win, delivery_vehicle.img, (car_draw_x, car_draw_y), delivery_vehicle.angle)
+        delivery_vehicle.car_center=blit_rotate_center(win, delivery_vehicle.img, (car_draw_x, car_draw_y), delivery_vehicle.angle)
 
         pygame.display.update()
 

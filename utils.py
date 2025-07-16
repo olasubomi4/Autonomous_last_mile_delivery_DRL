@@ -13,6 +13,7 @@ def  blit_rotate_center(win, image, top_left, angle):
     new_rect = rotated_image.get_rect(
         center=image.get_rect(topleft=top_left).center)
     win.blit(rotated_image, new_rect.topleft)
+    return new_rect.center
 
 def manhattan_distance(x1,y1,x2,y2):
     return abs(x1-x2)+abs(y1-y2)
