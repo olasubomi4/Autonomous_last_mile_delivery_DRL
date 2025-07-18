@@ -64,12 +64,13 @@ class Simulation_rl:
 
         self.deliveries_pending = len(self.deliveries)
         self.start_time = time.time()
-        self.next_level = False
+        self.are_all_deliveries_completed_flag = False
+        self.next_delivery_flag=False
         self.clock = pygame.time.Clock()
         self.FPS = 60
 
 
-    def next_level(self):
+    def next_delivery(self):
         self.env.init_delivery_queue(self.deliveries, self.delivery_vehicle, self.grid)
         self.target_delivery = self.env.get_closest_delivery(self.delivery_vehicle)
         target_delivery_path=self.target_delivery[2]
@@ -134,9 +135,12 @@ class Simulation_rl:
         return self.deliveries_pending==0
 
     def reset(self):
-        self.delivery_vehicle.reset()
-        self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos)
-        self.deliveries_pending=len(self.deliveries)
+        if self.are_all_deliveries_completed_flag:
+            self.delivery_vehicle.reset()
+            self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos)
+            self.deliveries_pending=len(self.deliveries)
+            self.next_delivery()
+            self.next_level_flag=False
         return self.get_state()
 
     def draw(self):
