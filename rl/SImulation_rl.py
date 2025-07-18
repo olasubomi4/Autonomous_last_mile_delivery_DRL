@@ -14,8 +14,8 @@ class Simulation_rl:
     def _init_simulation(self):
         pygame.init()
         basepath="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/"
-        self.TRACK = scale_image(pygame.image.load(basepath+"imgs/track.png"), 1)
-        self.TRACK_BORDER = scale_image(pygame.image.load(basepath+"imgs/track-border.png"), 1)
+        self.TRACK = scale_image(pygame.image.load(basepath+"imgs/track2.png"), 1)
+        self.TRACK_BORDER = scale_image(pygame.image.load(basepath+"imgs/track-border2.png"), 1)
         self.OBSTACLE = scale_image(pygame.image.load(basepath+"imgs/obstacle8.png"), 0.02)
         self.DELIVERY_LOCATION = scale_image(pygame.image.load(basepath+"imgs/delivery-locations-icon.png"), 0.05)
         self.RED_CAR = scale_image(pygame.image.load(basepath+"imgs/red-car.png"), 0.3)
