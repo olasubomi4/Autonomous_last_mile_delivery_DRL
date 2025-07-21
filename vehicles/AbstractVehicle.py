@@ -2,7 +2,7 @@ from utils import scale_image, blit_rotate_center
 import pygame
 import time
 import math
-
+from Constant import Constant
 from vehicles import Delivery
 
 
@@ -10,6 +10,7 @@ class AbstractVehicle:
     def __init__(self, max_vel, rotation_vel,img,start_pos,vehicle):
         self.img = img
         self.max_vel = max_vel
+        self.max_speed=max_vel
         self.vel = 0
         self.rotation_vel = rotation_vel
         self.angle = 0
@@ -20,7 +21,7 @@ class AbstractVehicle:
         self.start_pos = start_pos
         self.vehicle=vehicle
         self.sensor_angles = [120,90,70]
-        self.sensor_max_len = 40                 # pixels
+        self.sensor_max_len = Constant.MAX_SENSOR_DISTANCE                # pixels
         self.sensor_values = [self.sensor_max_len] * len(self.sensor_angles)
         self.car_center=self.rect.center
 
@@ -32,6 +33,7 @@ class AbstractVehicle:
         elif right:
             self.angle -= min(rotation_speed, self.rotation_vel)
 
+
     def rotate_rl (self, rotation_speed=-5):
         isLeft=False
         if rotation_speed<0:
@@ -41,6 +43,8 @@ class AbstractVehicle:
             self.angle += min(rotation_speed, self.rotation_vel)
         else:
             self.angle -= min(rotation_speed, self.rotation_vel)
+
+        self.angle = (self.angle) % Constant.MAX_STEERING_ANGLE
 
         # if self.angle is None or :
         #     print("angle is none")
@@ -70,8 +74,8 @@ class AbstractVehicle:
 
     def move_forward_rl(self,acceleration,grid_node):
         if grid_node is not None:
-            max_speed = grid_node.get_speed_limit_for_car(self.vehicle, self.max_vel)
-            self.vel = min(self.vel + acceleration, max_speed)
+            self.max_speed = grid_node.get_speed_limit_for_car(self.vehicle, self.max_vel)
+            self.vel = min(self.vel + acceleration, self.max_speed)
             # print(f"current speed {self.vel} --- current max speed {max_speed}")
         else:
             self.vel = min(self.vel + acceleration, self.max_vel)
@@ -79,8 +83,8 @@ class AbstractVehicle:
 
     def move_backward(self,grid_node):
         if grid_node is not None:
-            max_speed=grid_node.get_speed_limit_for_car(self.vehicle,self.max_vel)
-            self.vel = max(self.vel - self.acceleration,-max_speed/2)
+            self.max_speed=grid_node.get_speed_limit_for_car(self.vehicle,self.max_vel)
+            self.vel = max(self.vel - self.acceleration,-self.max_speed/2)
         else:
             self.vel = max(self.vel - self.acceleration, -self.max_vel/2)
         self.move()

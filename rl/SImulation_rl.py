@@ -1,7 +1,10 @@
 import pygame
 import time
 import numpy as np
+
+from Constant import Constant
 from Environment.Grid import Grid
+from rl.State import State
 from utils import scale_image, manhattan_distance
 from Environment.DublinCityCenter  import  DublinCityCenter
 from vehicles.Car import Car
@@ -68,6 +71,7 @@ class Simulation_rl:
         self.next_delivery_flag=False
         self.clock = pygame.time.Clock()
         self.FPS = 60
+        self.previous_vehicle_to_target_delivery_distance= Constant.MAX_INT_SIZE
 
 
     def next_delivery(self):
@@ -127,9 +131,13 @@ class Simulation_rl:
 
         # target_delivery_location= (self.target_delivery[0],self.target_delivery[1])
         # state = [delivery_vehicle_distance_to_target,sensor_data,delivery_vehicle_velocity,delivery_vehicle_location,(delivery_destination.x,delivery_destination.y)]
-        state = [delivery_vehicle_distance_to_target,delivery_vehicle_velocity,delivery_vehicle_location[0],delivery_vehicle_location[1],delivery_destination.x,delivery_destination.y]
-
-        return state
+        state= State(self.target_delivery[0],sensor_data,self.delivery_vehicle,delivery_destination)
+        bottom_right_screen_position=(self.WIDTH,self.HEIGHT)
+        state_values= state.scale_state_values(bottom_right_screen_position,self.delivery_vehicle.max_vel)
+        return state_values
+        # # state = [delivery_vehicle_distance_to_target,delivery_vehicle_velocity,delivery_vehicle_location[0],delivery_vehicle_location[1],delivery_destination.x,delivery_destination.y]
+        #
+        # return state
 
     def is_finished(self):
         return self.deliveries_pending==0
@@ -157,3 +165,16 @@ class Simulation_rl:
 
     # def does_car_reach_target_delivery_and_is_completed(self,delivery_vehicle):
 
+
+    # def get_reward(self):
+    #
+    #
+    #     pass
+    #
+    # def calculate_safety_reward(self):
+    #     pass
+    #
+    # def calculate_efficiency_reward(self):
+    #     if
+    #
+    #     pass

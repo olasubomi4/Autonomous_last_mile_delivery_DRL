@@ -21,6 +21,9 @@ class Grid:
         self.width = len(self.grid)
         self.height = len(self.grid[0])
 
+    @staticmethod
+    def convert_grid_position_to_map_view(position):
+        return position*Grid.CELL_SIZE
     def generate_grid(self, RED_CAR, TRACK_BORDER_MASK):
         track_surface = self.track.convert()
         temp_car = Car(RED_CAR, (0, 0), max_vel=3, rotation_vel=8)
