@@ -109,7 +109,6 @@ class AbstractVehicle:
     def collide(self, mask, x=0, y=0):
         car_mask = pygame.mask.from_surface(self.img)
         try:
-
             offset = (int(self.x - x), int(self.y - y))
         except Exception as e:
             print(e)

@@ -102,11 +102,21 @@ class DublinCityCenter:
         moved = False
 
         if steering_action!=0:
+            try:
+                steering_action = int((steering_action / 1) * 5)
+            except Exception as e:
+                print(e)
+                steering_action = 0
             delivery_vehicle.rotate_rl(steering_action)
 
         if  acceleration_action!=0:
             moved = True
             is_move_forward = acceleration_action>0
+            try:
+                acceleration_action = (acceleration_action / 1) * 0.1
+            except Exception as e:
+                print(e)
+                acceleration_action = 0
             grid_node = grid.grid[int(delivery_vehicle.x) // Grid.CELL_SIZE][int(delivery_vehicle.y) // Grid.CELL_SIZE]
             if is_move_forward:
                 delivery_vehicle.move_forward_rl(acceleration_action,grid_node)
@@ -155,6 +165,7 @@ class DublinCityCenter:
                 i = i + 1
 
         # deliveries.append((1800,600)) - trinity location
+        deliveries.append(Delivery(grid.grid[61][39]))
         return deliveries
 
     def init_delivery_queue(self,deliveries,delivery_vehicle,grid):

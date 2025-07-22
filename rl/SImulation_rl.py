@@ -3,6 +3,7 @@ import time
 import numpy as np
 
 from Constant import Constant
+from DeliveryStates import DeliveryStates
 from Environment.Grid import Grid
 from rl.State import State
 from utils import scale_image, manhattan_distance
@@ -17,11 +18,11 @@ class Simulation_rl:
     def _init_simulation(self):
         pygame.init()
         basepath="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/"
-        self.TRACK = scale_image(pygame.image.load(basepath+"imgs/track2.png"), 1)
-        self.TRACK_BORDER = scale_image(pygame.image.load(basepath+"imgs/track-border2.png"), 1)
+        self.TRACK = scale_image(pygame.image.load(basepath+"imgs/track3.png"), 1)
+        self.TRACK_BORDER = scale_image(pygame.image.load(basepath+"imgs/track-border3.png"), 1)
         self.OBSTACLE = scale_image(pygame.image.load(basepath+"imgs/obstacle8.png"), 0.02)
         self.DELIVERY_LOCATION = scale_image(pygame.image.load(basepath+"imgs/delivery-locations-icon.png"), 0.05)
-        self.RED_CAR = scale_image(pygame.image.load(basepath+"imgs/red-car.png"), 0.3)
+        self.RED_CAR = scale_image(pygame.image.load(basepath+"imgs/red-car.png"), 0.2)
 
         # Create masks
         self.TRACK_BORDER_MASK = pygame.mask.from_surface(self.TRACK_BORDER)
@@ -45,8 +46,8 @@ class Simulation_rl:
         self.player_start_pos = (220, 370)
         self.delivery_vehicle = Car(self.RED_CAR, self.player_start_pos, 3, 8)
 
-        self.obstacles = self.env.generate_obstacles(self.grid, self.player_start_pos, num_obstacles=10)
-        self.deliveries = self.env.generate_deliveries(self.grid, self.player_start_pos, num_deliveries=10)
+        self.obstacles = self.env.generate_obstacles(self.grid, self.player_start_pos, num_obstacles=0)
+        self.deliveries = self.env.generate_deliveries(self.grid, self.player_start_pos, num_deliveries=0)
 
         self.env.init_delivery_queue(self.deliveries, self.delivery_vehicle, self.grid)
 
@@ -82,18 +83,6 @@ class Simulation_rl:
         self.env.draw(self.WIN, self.images,self.delivery_vehicle, self.obstacles, self.deliveries, path=target_delivery_path)
 
     def move(self,steering_action,acceleration_action):
-        try:
-            steering_action= int((steering_action/1)*5)
-        except Exception as e:
-            print(e)
-            steering_action=0
-
-        try:
-            acceleration_action= (acceleration_action/1)*0.1
-        except Exception as e:
-            print(e)
-            acceleration_action=0
-
         self.env.move_vehicle_rl(self.delivery_vehicle,self.grid,steering_action, acceleration_action)
 
     def get_sensor_result(self,delivery_vehicle,grid):
@@ -104,15 +93,21 @@ class Simulation_rl:
     def draw_sensors(self,delivery_vehicle):
         delivery_vehicle.draw_sensors(self.WIN)
 
-    def does_car_collide_with_obstacle(self,delivery_vehicle,obstacles):
-        result= delivery_vehicle.collide_with_obstacle(self.OBSTACLE_MASK,obstacles)
-        # delivery_vehicle.reset()
+
+    def does_car_collide_with_obstacle(self):
+        result= self.delivery_vehicle.collide_with_obstacle(self.OBSTACLE_MASK,self.obstacles)
+        if result:
+            self.delivery_vehicle.reset()
         return result
 
-    def does_car_collide_with_border(self,delivery_vehicle):
-        result=  delivery_vehicle.collide(self.TRACK_BORDER_MASK)
-        # delivery_vehicle.bounce()
+    def does_car_collide_with_border(self):
+        result=  self.delivery_vehicle.collide(self.TRACK_BORDER_MASK)
+        # if result:
+        #     self.delivery_vehicle.reset()
         return result
+
+    def reset_car(self):
+        self.delivery_vehicle.reset()
 
     def does_car_reach_target_delivery(self,delivery_vehicle):
         return delivery_vehicle.is_delivery_completed(self.DELIVERY_LOCATION_MASK,self.target_delivery) and delivery_vehicle.vel==0
@@ -124,23 +119,31 @@ class Simulation_rl:
         delivery_vehicle_velocity= self.delivery_vehicle.vel
         delivery_vehicle_location= (self.delivery_vehicle.x,self.delivery_vehicle.y)
 
-        is_there_border_collision= self.does_car_collide_with_border(self.delivery_vehicle)
-        if is_there_border_collision:
-            self.delivery_vehicle.bounce()
-        is_there_obstacle_collision= self.does_car_collide_with_obstacle(self.delivery_vehicle,self.obstacles)
+        # is_there_border_collision= self.does_car_collide_with_border(self.delivery_vehicle)
+        # if is_there_border_collision:
+        #     self.delivery_vehicle.bounce()
+        # is_there_obstacle_collision= self.does_car_collide_with_obstacle(self.delivery_vehicle,self.obstacles)
 
         # target_delivery_location= (self.target_delivery[0],self.target_delivery[1])
         # state = [delivery_vehicle_distance_to_target,sensor_data,delivery_vehicle_velocity,delivery_vehicle_location,(delivery_destination.x,delivery_destination.y)]
-        state= State(self.target_delivery[0],sensor_data,self.delivery_vehicle,delivery_destination)
         bottom_right_screen_position=(self.WIDTH,self.HEIGHT)
-        state_values= state.scale_state_values(bottom_right_screen_position,self.delivery_vehicle.max_vel)
-        return state_values
+        state= State(self.target_delivery[0],sensor_data,self.delivery_vehicle,delivery_destination,bottom_right_screen_position)
+
+        return state
         # # state = [delivery_vehicle_distance_to_target,delivery_vehicle_velocity,delivery_vehicle_location[0],delivery_vehicle_location[1],delivery_destination.x,delivery_destination.y]
         #
         # return state
 
     def is_finished(self):
         return self.deliveries_pending==0
+
+    def has_reached_destination(self):
+        return self.delivery_vehicle.is_delivery_completed(self.DELIVERY_LOCATION_MASK, self.target_delivery)
+
+    def mark_delivery_completed(self):
+        self.target_delivery[1].delivery_state=DeliveryStates.COMPLETED
+
+
 
     def reset(self):
         if self.are_all_deliveries_completed_flag:
@@ -163,18 +166,86 @@ class Simulation_rl:
         # print("Pygame initialized:", pygame.get_init())
         # print("Display info:", pygame.display.Info())
 
+
+
     # def does_car_reach_target_delivery_and_is_completed(self,delivery_vehicle):
 
+    # def get_reward(self, previous_state: State,current_state):
+    #     if previous_state is not None:
+    #         efficiency_reward = self.calculate_efficiency_reward(previous_state, current_state)
+    #         safety_reward = self.calculate_safety_reward(current_state)
+    #         timestep_penalty = -0.1
+    #
+    #         reward= efficiency_reward + safety_reward + timestep_penalty
+    #         return self.normalize_reward(reward)
+    #     return 0.05
 
-    # def get_reward(self):
-    #
-    #
-    #     pass
-    #
-    # def calculate_safety_reward(self):
-    #     pass
-    #
-    # def calculate_efficiency_reward(self):
-    #     if
-    #
-    #     pass
+    def get_reward(self, previous_state: State, current_state: State) -> float:
+        if previous_state is None:
+            return 0.05
+
+        efficiency_weight = 0.8
+        safety_weight = 0.2
+
+        efficiency_reward = self.calculate_efficiency_reward(previous_state, current_state)  # in [0, 1]
+        safety_reward = self.calculate_safety_reward(current_state)  # needs normalization
+
+        normalized_safety = self.normalize_safety(safety_reward)
+
+        weighted_reward = (
+                efficiency_weight * efficiency_reward +
+                safety_weight * normalized_safety
+        )
+
+        weighted_reward -= 0.01
+        weighted_reward = max(0.0, min(1.0, weighted_reward))
+
+        return weighted_reward
+
+    def normalize_safety(self, safety_raw, min_reward=-3.0, max_reward=2.4):
+        return (safety_raw - min_reward) / (max_reward - min_reward)
+
+    def calculate_safety_reward(self,current_state: State) -> float:
+        sensors = [
+            current_state.get_sensor_one_data(),
+            current_state.get_sensor_two_data(),
+            current_state.get_sensor_three_data(),
+        ]
+
+        total_reward = 0
+        for sensor in sensors:
+            distance = sensor[0]
+            if sensor[2] == 0:
+                if distance >= Constant.MAX_SENSOR_DISTANCE :
+                    total_reward += 0.8
+                else:
+                    total_reward -= (Constant.MAX_SENSOR_DISTANCE - distance) / Constant.MAX_SENSOR_DISTANCE
+
+        return total_reward
+
+    def calculate_efficiency_reward(self,previous_state: State, current_state: State) -> float:
+        # previous_distance = previous_state.get_distance_to_target_delivery()
+
+
+        current_distance = current_state.get_distance_to_target_delivery()
+        bottom_right_screen_position = (self.WIDTH, self.HEIGHT)
+        top_right_screen_position=(0,0)
+        map_max_x_axis=bottom_right_screen_position[0]
+        map_max_y_axis=bottom_right_screen_position[1]
+        # current_distance = current_distance
+        delivery_destination=self.target_delivery[1].delivery_destination
+
+        max_manhattan_distance=(manhattan_distance(self.player_start_pos[0],self.player_start_pos[1],delivery_destination.x,delivery_destination.y))
+        if max_manhattan_distance == 0:
+            return 1.0
+        reward = 1.0-(current_distance / max_manhattan_distance)
+        return max(0.0,min(1.0,reward))
+        # if current_distance < previous_distance:
+        #     return 3.0
+        # elif current_distance > previous_distance:
+        #     return -4.0
+        # else:
+        #     return -0.3
+
+    def normalize_reward(self,raw_reward, min_reward=-3.0, max_reward=2.4):
+        return (raw_reward - min_reward) / (max_reward - min_reward)
