@@ -18,8 +18,8 @@ class Simulation_rl:
     def _init_simulation(self):
         pygame.init()
         basepath="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/"
-        self.TRACK = scale_image(pygame.image.load(basepath+"imgs/track3.png"), 1)
-        self.TRACK_BORDER = scale_image(pygame.image.load(basepath+"imgs/track-border3.png"), 1)
+        self.TRACK = scale_image(pygame.image.load(basepath+"imgs/track4.png"), 1)
+        self.TRACK_BORDER = scale_image(pygame.image.load(basepath+"imgs/track-border4.png"), 1)
         self.OBSTACLE = scale_image(pygame.image.load(basepath+"imgs/obstacle8.png"), 0.02)
         self.DELIVERY_LOCATION = scale_image(pygame.image.load(basepath+"imgs/delivery-locations-icon.png"), 0.05)
         self.RED_CAR = scale_image(pygame.image.load(basepath+"imgs/red-car.png"), 0.2)
@@ -43,7 +43,9 @@ class Simulation_rl:
         self.grid.generate_grid(self.RED_CAR, self.TRACK_BORDER_MASK)
         self.images = [(self.TRACK, (0, 0)), (self.TRACK_BORDER, (0, 0))]
 
-        self.player_start_pos = (220, 370)
+        self.player_start_pos = [220, 370]
+        self.agent_checkpoint_position = [220, 370,0]
+
         self.delivery_vehicle = Car(self.RED_CAR, self.player_start_pos, 3, 8)
 
         self.obstacles = self.env.generate_obstacles(self.grid, self.player_start_pos, num_obstacles=0)
@@ -76,6 +78,8 @@ class Simulation_rl:
 
 
     def next_delivery(self):
+        self.agent_checkpoint_position = [self.delivery_vehicle.x, self.delivery_vehicle.y,self.delivery_vehicle.angle]
+        self.delivery_vehicle.update_vehicle_start_position(self.agent_checkpoint_position)
         self.env.init_delivery_queue(self.deliveries, self.delivery_vehicle, self.grid)
         self.target_delivery = self.env.get_closest_delivery(self.delivery_vehicle)
         target_delivery_path=self.target_delivery[2]
@@ -142,16 +146,19 @@ class Simulation_rl:
 
     def mark_delivery_completed(self):
         self.target_delivery[1].delivery_state=DeliveryStates.COMPLETED
+        self.deliveries_pending=self.deliveries_pending-1
 
 
 
     def reset(self):
         if self.are_all_deliveries_completed_flag:
+            self.agent_checkpoint_position = [self.player_start_pos[0], self.player_start_pos[1],0]
+            self.delivery_vehicle.update_vehicle_start_position(self.agent_checkpoint_position)
             self.delivery_vehicle.reset()
-            self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos)
+            self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos,num_obstacles=0,num_deliveries=0)
             self.deliveries_pending=len(self.deliveries)
             self.next_delivery()
-            self.next_level_flag=False
+            self.are_all_deliveries_completed_flag=False
         return self.get_state()
 
     def draw(self):
@@ -184,8 +191,8 @@ class Simulation_rl:
         if previous_state is None:
             return 0.05
 
-        efficiency_weight = 0.8
-        safety_weight = 0.2
+        efficiency_weight = 0.5
+        safety_weight = 0.5
 
         efficiency_reward = self.calculate_efficiency_reward(previous_state, current_state)  # in [0, 1]
         safety_reward = self.calculate_safety_reward(current_state)  # needs normalization
@@ -197,12 +204,18 @@ class Simulation_rl:
                 safety_weight * normalized_safety
         )
 
-        weighted_reward -= 0.01
-        weighted_reward = max(0.0, min(1.0, weighted_reward))
+        weighted_reward =  max(0.0, min(1.0, weighted_reward))
 
-        return weighted_reward
+        weighted_reward= self.transform_result_between_negative_one_and_positive_one(weighted_reward)
+        time_step_punishment=0.01
+        return weighted_reward-time_step_punishment
 
-    def normalize_safety(self, safety_raw, min_reward=-3.0, max_reward=2.4):
+    def transform_result_between_negative_one_and_positive_one(self, value):
+        return 2*value - 1
+
+
+
+    def normalize_safety(self, safety_raw, min_reward=-3.0, max_reward=0):
         return (safety_raw - min_reward) / (max_reward - min_reward)
 
     def calculate_safety_reward(self,current_state: State) -> float:
@@ -217,7 +230,7 @@ class Simulation_rl:
             distance = sensor[0]
             if sensor[2] == 0:
                 if distance >= Constant.MAX_SENSOR_DISTANCE :
-                    total_reward += 0.8
+                    total_reward += 0
                 else:
                     total_reward -= (Constant.MAX_SENSOR_DISTANCE - distance) / Constant.MAX_SENSOR_DISTANCE
 
@@ -225,27 +238,26 @@ class Simulation_rl:
 
     def calculate_efficiency_reward(self,previous_state: State, current_state: State) -> float:
         # previous_distance = previous_state.get_distance_to_target_delivery()
+        delivery_vehicle_position_at_previous_state= previous_state.get_delivery_vehicle_location()
 
 
-        current_distance = current_state.get_distance_to_target_delivery()
+        # current_distance = current_state.get_distance_to_target_delivery()
         bottom_right_screen_position = (self.WIDTH, self.HEIGHT)
         top_right_screen_position=(0,0)
         map_max_x_axis=bottom_right_screen_position[0]
         map_max_y_axis=bottom_right_screen_position[1]
         # current_distance = current_distance
         delivery_destination=self.target_delivery[1].delivery_destination
+        previous_distance=manhattan_distance(delivery_vehicle_position_at_previous_state[0],delivery_vehicle_position_at_previous_state[1],delivery_destination.x,delivery_destination.y)
+        current_distance= (manhattan_distance(self.delivery_vehicle.x,self.delivery_vehicle.y,delivery_destination.x,delivery_destination.y))
+        max_manhattan_distance=(manhattan_distance(self.agent_checkpoint_position[0],self.agent_checkpoint_position[1],delivery_destination.x,delivery_destination.y))
+        reward= (previous_distance-current_distance)/max_manhattan_distance
 
-        max_manhattan_distance=(manhattan_distance(self.player_start_pos[0],self.player_start_pos[1],delivery_destination.x,delivery_destination.y))
-        if max_manhattan_distance == 0:
-            return 1.0
-        reward = 1.0-(current_distance / max_manhattan_distance)
-        return max(0.0,min(1.0,reward))
-        # if current_distance < previous_distance:
-        #     return 3.0
-        # elif current_distance > previous_distance:
-        #     return -4.0
-        # else:
-        #     return -0.3
+        return  max(-1.0, min(1.0, reward))
+        # if max_manhattan_distance == 0:
+        #     return 1.0
+        # reward = 1.0-(current_distance / max_manhattan_distance)
+        # return max(0.0,min(1.0,reward))
 
     def normalize_reward(self,raw_reward, min_reward=-3.0, max_reward=2.4):
         return (raw_reward - min_reward) / (max_reward - min_reward)

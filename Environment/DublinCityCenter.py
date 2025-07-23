@@ -2,7 +2,7 @@ import pygame
 
 from DeliveryStates import DeliveryStates
 from Environment.Grid import Grid
-from utils import blit_rotate_center
+from utils import blit_rotate_center, manhattan_distance
 import random
 import time
 import heapq
@@ -166,6 +166,7 @@ class DublinCityCenter:
 
         # deliveries.append((1800,600)) - trinity location
         deliveries.append(Delivery(grid.grid[61][39]))
+        deliveries.append(Delivery(grid.grid[111][55]))
         return deliveries
 
     def init_delivery_queue(self,deliveries,delivery_vehicle,grid):
@@ -187,9 +188,9 @@ class DublinCityCenter:
             if delivery.delivery_state == DeliveryStates.PREPARING:
                 delivery.delivery_state = DeliveryStates.PENDING
 
-    def reset(self,grid,delivery_vehicle_start_pos):
-        obstacles = self.generate_obstacles(grid, delivery_vehicle_start_pos, num_obstacles=10)
-        deliveries = self.generate_deliveries(grid, delivery_vehicle_start_pos)
+    def reset(self,grid,delivery_vehicle_start_pos,num_obstacles=10,num_deliveries=4):
+        obstacles = self.generate_obstacles(grid, delivery_vehicle_start_pos, num_obstacles)
+        deliveries = self.generate_deliveries(grid, delivery_vehicle_start_pos, num_deliveries)
         start_time = time.time()
         return obstacles, deliveries, start_time
 
@@ -199,7 +200,11 @@ class DublinCityCenter:
         result =grid.a_star_path_planning((int(delivery_vehicle.x), int(delivery_vehicle.y)), delivery_destination, delivery_vehicle.vehicle)
         if result is not None:
             return result
-        max_int_value=  10 ** 100
+        top_right_screen_position=(0,0)
+        map_max_x_axis=self.width
+        map_max_y_axis=self.height
+        max_manhattan_distance=(manhattan_distance(top_right_screen_position[0],top_right_screen_position[1],map_max_x_axis,map_max_y_axis))
+        max_int_value=  max_manhattan_distance
         return [],max_int_value
 
 

@@ -13,7 +13,8 @@ class AbstractVehicle:
         self.max_speed=max_vel
         self.vel = 0
         self.rotation_vel = rotation_vel
-        self.angle = 0
+        self.start_angle=0
+        self.angle = self.start_angle
         self.x, self.y = start_pos
         self.acceleration = 0.1
         self.original_image = img
@@ -21,6 +22,7 @@ class AbstractVehicle:
         self.start_pos = start_pos
         self.vehicle=vehicle
         self.sensor_angles = [120,90,70]
+        # self.sensor_angles = [120, 90, 60,0,180,270,300,240]
         self.sensor_max_len = Constant.MAX_SENSOR_DISTANCE                # pixels
         self.sensor_values = [self.sensor_max_len] * len(self.sensor_angles)
         self.car_center=self.rect.center
@@ -32,6 +34,11 @@ class AbstractVehicle:
             self.angle += min(rotation_speed, self.rotation_vel)
         elif right:
             self.angle -= min(rotation_speed, self.rotation_vel)
+
+    def update_vehicle_start_position(self,new_start_pos):
+        self.start_pos = [new_start_pos[0],new_start_pos[1]]
+        self.start_angle = new_start_pos[2]
+
 
 
     def rotate_rl (self, rotation_speed=-5):
@@ -130,7 +137,7 @@ class AbstractVehicle:
 
     def reset(self):
         self.x, self.y = self.start_pos
-        self.angle = 0
+        self.angle = self.start_angle
         self.vel = 0
 
     def _cast_single_sensor(self, angle, sensor_targets):

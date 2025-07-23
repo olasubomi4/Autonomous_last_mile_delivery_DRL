@@ -41,17 +41,27 @@ class Agent (gym.Env):
         done =self.simulation.is_finished()
         if self.simulation.does_car_collide_with_obstacle():
             self.simulation.reset_car()
-            reward =0
+            reward =-1
             done=True
         elif self.simulation.does_car_collide_with_border():
             self.simulation.reset_car()
-            reward =0
+            reward =-1
             done = True
         elif self.simulation.has_reached_destination():
             print("Reached destination")
-            self.simulation.reset_car()
+            self.simulation.mark_delivery_completed()
+            if self.simulation.is_finished():
+                self.simulation.are_all_deliveries_completed_flag=True
+                # self.previous_state = None
+                # self.simulation.reset()
+                done=True
+                print("resetting environment")
+            else:
+                self.simulation.next_delivery()
             reward=1
-            done=True
+
+
+            # done=True
         # elif self.simulation.
 
         # reward=np.random.uniform(-1,1)
@@ -60,6 +70,7 @@ class Agent (gym.Env):
     def reset(self):
         self.previous_state = None
         self.simulation.reset()
+
         state= self.simulation.get_state().scale_state_values()
         return state
 
@@ -76,9 +87,12 @@ def train_TD3(env):
         verbose=1,
         device='cpu',
         tensorboard_log=log_dir,
-        learning_starts=1000,
+        learning_rate=0.0003,
+        learning_starts=3000,
         train_freq=100,
         gradient_steps=100,
+        policy_kwargs=dict(net_arch=[256, 256])
+
     )
 
     timesteps=100000
@@ -87,8 +101,21 @@ def train_TD3(env):
         iters +=1
         td3.learn(total_timesteps=timesteps,reset_num_timesteps=False)
         td3.save(f"{model_dir}/td3 _ {timesteps*iters}")
+# td3 _ 30000.zip
+def evaluate_agent(env, model_path="models/td3 _ 12000.zip"):
+    model = TD3.load(model_path, env=env)
+    state = env.reset()
 
+    done = False
+
+    while not done:
+        action, _ = model.predict(state)
+        state, reward, done, _ = env.step(action)
 
 if __name__ == "__main__":
+    train =True
     env = Agent()
-    train_TD3(env)
+    if train:
+        train_TD3(env)
+    else:
+        evaluate_agent(env)
