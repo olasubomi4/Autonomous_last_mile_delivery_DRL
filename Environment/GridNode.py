@@ -30,6 +30,8 @@ class GridNode:
         else:
             return GridNode.max_speed-vehicle.value.high_way_max_speed
 
+
+
 # if __name__=="__main__":
 #     grid_node = GridNode(1,2,(0, 0, 0,255))
 #     print(grid_node.get_speed_limit(Vehicles.CAR))

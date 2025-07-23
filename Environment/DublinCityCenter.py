@@ -2,7 +2,7 @@ import pygame
 
 from DeliveryStates import DeliveryStates
 from Environment.Grid import Grid
-from utils import blit_rotate_center
+from utils import blit_rotate_center, manhattan_distance
 import random
 import time
 import heapq
@@ -77,7 +77,7 @@ class DublinCityCenter:
 
 
 
-    def move_player(self,delivery_vehicle,grid):
+    def move_vehicle(self,delivery_vehicle,grid):
         keys = pygame.key.get_pressed()
         moved = False
 
@@ -95,6 +95,33 @@ class DublinCityCenter:
             grid_node = grid.grid[int(delivery_vehicle.x) // Grid.CELL_SIZE][int(delivery_vehicle.y) // Grid.CELL_SIZE]
             delivery_vehicle.move_backward(grid_node)
 
+        if not moved:
+            delivery_vehicle.reduce_speed()
+
+    def move_vehicle_rl(self,delivery_vehicle,grid,steering_action,acceleration_action):
+        moved = False
+
+        if steering_action!=0:
+            try:
+                steering_action = int((steering_action / 1) * 5)
+            except Exception as e:
+                print(e)
+                steering_action = 0
+            delivery_vehicle.rotate_rl(steering_action)
+
+        if  acceleration_action!=0:
+            moved = True
+            is_move_forward = acceleration_action>0
+            try:
+                acceleration_action = (acceleration_action / 1) * 0.1
+            except Exception as e:
+                print(e)
+                acceleration_action = 0
+            grid_node = grid.grid[int(delivery_vehicle.x) // Grid.CELL_SIZE][int(delivery_vehicle.y) // Grid.CELL_SIZE]
+            if is_move_forward:
+                delivery_vehicle.move_forward_rl(acceleration_action,grid_node)
+            else:
+                delivery_vehicle.move_backward_rl(acceleration_action,grid_node)
         if not moved:
             delivery_vehicle.reduce_speed()
 
@@ -138,6 +165,8 @@ class DublinCityCenter:
                 i = i + 1
 
         # deliveries.append((1800,600)) - trinity location
+        deliveries.append(Delivery(grid.grid[61][39]))
+        deliveries.append(Delivery(grid.grid[111][55]))
         return deliveries
 
     def init_delivery_queue(self,deliveries,delivery_vehicle,grid):
@@ -159,9 +188,9 @@ class DublinCityCenter:
             if delivery.delivery_state == DeliveryStates.PREPARING:
                 delivery.delivery_state = DeliveryStates.PENDING
 
-    def reset(self,grid,delivery_vehicle_start_pos):
-        obstacles = self.generate_obstacles(grid, delivery_vehicle_start_pos, num_obstacles=10)
-        deliveries = self.generate_deliveries(grid, delivery_vehicle_start_pos)
+    def reset(self,grid,delivery_vehicle_start_pos,num_obstacles=10,num_deliveries=4):
+        obstacles = self.generate_obstacles(grid, delivery_vehicle_start_pos, num_obstacles)
+        deliveries = self.generate_deliveries(grid, delivery_vehicle_start_pos, num_deliveries)
         start_time = time.time()
         return obstacles, deliveries, start_time
 
@@ -171,7 +200,11 @@ class DublinCityCenter:
         result =grid.a_star_path_planning((int(delivery_vehicle.x), int(delivery_vehicle.y)), delivery_destination, delivery_vehicle.vehicle)
         if result is not None:
             return result
-        max_int_value=  10 ** 100
+        top_right_screen_position=(0,0)
+        map_max_x_axis=self.width
+        map_max_y_axis=self.height
+        max_manhattan_distance=(manhattan_distance(top_right_screen_position[0],top_right_screen_position[1],map_max_x_axis,map_max_y_axis))
+        max_int_value=  max_manhattan_distance
         return [],max_int_value
 
 

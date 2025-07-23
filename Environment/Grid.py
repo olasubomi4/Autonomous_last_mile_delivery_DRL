@@ -9,7 +9,7 @@ import heapq
 from utils import manhattan_distance
 
 class Grid:
-    OBSTACLE = scale_image(pygame.image.load("imgs/obstacle8.png"), 0.02)
+    OBSTACLE = scale_image(pygame.image.load("/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/imgs/obstacle8.png"), 0.02)
     OBSTACLE_MASK = pygame.mask.from_surface(OBSTACLE)
     CELL_SIZE=6
     def __init__(self, width, height,track):
@@ -21,6 +21,9 @@ class Grid:
         self.width = len(self.grid)
         self.height = len(self.grid[0])
 
+    @staticmethod
+    def convert_grid_position_to_map_view(position):
+        return position*Grid.CELL_SIZE
     def generate_grid(self, RED_CAR, TRACK_BORDER_MASK):
         track_surface = self.track.convert()
         temp_car = Car(RED_CAR, (0, 0), max_vel=3, rotation_vel=8)
@@ -42,8 +45,8 @@ class Grid:
                 car_x = x - car_width // 2
                 car_y = y - car_height // 2
 
-                # Check collision against track border
-                offset = (int(car_x - 0), int(car_y - 0))  # Assuming TRACK_BORDER at (0, 0)
+
+                offset = (int(car_x - 0), int(car_y - 0))
                 collision = TRACK_BORDER_MASK.overlap(car_mask, offset)
 
                 if not collision:
@@ -112,7 +115,7 @@ class Grid:
                 return pixel_path,current_cost
 
 
-            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:  # 4 directions only
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                 neighbor = (current[0] + dx, current[1] + dy)
                 if 0 <= neighbor[0] < self.width and 0 <= neighbor[1] < self.height:
                     neighbor_node = self.grid[neighbor[0]][neighbor[1]]
