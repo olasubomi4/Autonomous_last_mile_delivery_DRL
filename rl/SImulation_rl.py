@@ -55,7 +55,7 @@ class Simulation_rl:
 
         #show all delivery for a specific number of seconds
         self.env.draw(self.WIN, self.images, self.delivery_vehicle, self.obstacles, self.deliveries)
-
+        pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 # run = False
@@ -67,6 +67,7 @@ class Simulation_rl:
 
         self.env.update_delivery_state_after_finding_tagret(self.deliveries, self.target_delivery)
         self.env.draw(self.WIN, self.images,self.delivery_vehicle, self.obstacles, self.deliveries, path=target_delivery_path)
+        pygame.display.update()
 
         self.deliveries_pending = len(self.deliveries)
         self.start_time = time.time()
@@ -75,7 +76,6 @@ class Simulation_rl:
         self.clock = pygame.time.Clock()
         self.FPS = 60
         self.previous_vehicle_to_target_delivery_distance= Constant.MAX_INT_SIZE
-
 
     def next_delivery(self):
         self.agent_checkpoint_position = [self.delivery_vehicle.x, self.delivery_vehicle.y,self.delivery_vehicle.angle]
@@ -155,7 +155,7 @@ class Simulation_rl:
             self.agent_checkpoint_position = [self.player_start_pos[0], self.player_start_pos[1],0]
             self.delivery_vehicle.update_vehicle_start_position(self.agent_checkpoint_position)
             self.delivery_vehicle.reset()
-            self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos,num_obstacles=0,num_deliveries=0)
+            self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos,num_obstacles=0,num_deliveries=3)
             self.deliveries_pending=len(self.deliveries)
             self.next_delivery()
             self.are_all_deliveries_completed_flag=False
@@ -169,9 +169,8 @@ class Simulation_rl:
             if event.type == pygame.QUIT:
                 # run = False
                 break
-        # pygame.display.update()
-        # print("Pygame initialized:", pygame.get_init())
-        # print("Display info:", pygame.display.Info())
+
+        pygame.display.update()
 
 
 

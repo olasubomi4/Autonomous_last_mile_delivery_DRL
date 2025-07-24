@@ -73,7 +73,7 @@ class DublinCityCenter:
         car_draw_y = delivery_vehicle.y - offset_y
         delivery_vehicle.car_center=blit_rotate_center(win, delivery_vehicle.img, (car_draw_x, car_draw_y), delivery_vehicle.angle)
 
-        pygame.display.update()
+        # pygame.display.update()
 
 
 
@@ -158,7 +158,7 @@ class DublinCityCenter:
             y = random.randint(0, grid.height - 1)
             delivery_grid_node = grid.grid[x][y]
 
-            if start_pos_grid_node != delivery_grid_node and (not delivery_grid_node.is_blocked ) and delivery_grid_node.is_road:
+            if start_pos_grid_node != delivery_grid_node and (not delivery_grid_node.is_blocked ) and delivery_grid_node.is_road and self.is_surrounding_area_clear(x,y,grid):
                 deliveries.append(
                     Delivery(delivery_grid_node)
                 )
@@ -168,6 +168,29 @@ class DublinCityCenter:
         deliveries.append(Delivery(grid.grid[61][39]))
         deliveries.append(Delivery(grid.grid[111][55]))
         return deliveries
+
+    def is_surrounding_area_clear(self,x, y, grid):
+        directions = [
+            (-1, 0),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+            (-1, -1),
+            (-1, 1),
+            (1, -1),
+            (1, 1),
+        ]
+
+        for dx, dy in directions:
+            for step in range(1, 4):
+                nx = x + (dx * step)
+                ny = y + (dy * step)
+                if 0 <= nx < grid.width and 0 <= ny < grid.height:
+                    cell = grid.grid[nx][ny]
+                    if cell.is_blocked and not cell.is_road:
+                        return False
+        return True
+
 
     def init_delivery_queue(self,deliveries,delivery_vehicle,grid):
         if len(self.delivery_queue)>0:
@@ -200,6 +223,19 @@ class DublinCityCenter:
         result =grid.a_star_path_planning((int(delivery_vehicle.x), int(delivery_vehicle.y)), delivery_destination, delivery_vehicle.vehicle)
         if result is not None:
             return result
+
+        #retry
+        directions=[ (-1, 0),
+            (1, 0),
+            (0, -1),
+            (0, 1),]
+        for dx, dy in directions:
+            result = grid.a_star_path_planning((int(delivery_vehicle.x), int(delivery_vehicle.y)), delivery_destination,
+                                               delivery_vehicle.vehicle,dx,dy)
+            if result is not None:
+                return result
+
+        #fail-safe if retry doesnt work
         top_right_screen_position=(0,0)
         map_max_x_axis=self.width
         map_max_y_axis=self.height

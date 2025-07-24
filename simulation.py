@@ -51,6 +51,7 @@ start=True
 target_delivery =tuple([])
 env.init_delivery_queue(deliveries, delivery_vehicle, grid)
 while run:
+    clock.tick(FPS)
     env.draw(WIN, images, delivery_vehicle, obstacles, deliveries)
     #RESET/ done
     if  deliveries_pending<=0:
@@ -109,5 +110,5 @@ while run:
         target_delivery[1].delivery_completed_time= time.time()
         target_delivery[1].delivery_state=DeliveryStates.COMPLETED
         deliveries_pending=deliveries_pending-1
-
+    pygame.display.update()
 pygame.quit()
