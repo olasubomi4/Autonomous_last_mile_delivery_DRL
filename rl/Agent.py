@@ -102,7 +102,7 @@ def train_TD3(env):
         td3.learn(total_timesteps=timesteps,reset_num_timesteps=False)
         td3.save(f"{model_dir}/td3 _ {timesteps*iters}")
 # td3 _ 30000.zip
-def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/train10models/td3 _ 200000.zip"):
+def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/train11models/td3 _ 200000.zip"):
     model = TD3.load(model_path, env=env)
     state = env.reset()
 

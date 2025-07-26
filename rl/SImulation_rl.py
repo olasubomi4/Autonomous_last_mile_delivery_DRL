@@ -194,11 +194,11 @@ class Simulation_rl:
         if previous_state is None:
             return 0.05
         #
-        # efficiency_weight = float(os.getenv("EFFICIENCY_WEIGHT",0.5))
-        # safety_weight = float(os.getenv("SAFETY_REWARD",0.5))
+        efficiency_weight = float(os.getenv("EFFICIENCY_WEIGHT",0.5))
+        safety_weight = float(os.getenv("SAFETY_REWARD",0.5))
 
-        efficiency_weight =0.55
-        safety_weight = 0.45
+        # efficiency_weight =0.55
+        # safety_weight = 0.45
 
         efficiency_reward = self.calculate_efficiency_reward(previous_state, current_state)  # in [-1, 1]
         safety_reward = self.calculate_safety_reward(current_state)  # in [-1, 0]
