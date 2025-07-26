@@ -6,7 +6,7 @@ from utils import manhattan_distance
 
 
 class State:
-    def __init__(self,distance_to_target_delivery,sensor_data,delivery_vehicle,target_delivery_location,bottom_right_screen_position):
+    def __init__(self,distance_to_target_delivery,sensor_data,delivery_vehicle,target_delivery_location,bottom_right_screen_position,current_location_speed_limit):
         self.__distance_to_target_delivery=distance_to_target_delivery
         self.__sensor_one_data = sensor_data[0]
         self.__sensor_two_data = sensor_data[1]
@@ -23,6 +23,7 @@ class State:
         self.__number_of_pending_deliveries=None
         self.__bottom_right_screen_position=bottom_right_screen_position
         self.__delivery_vehicle_max_vel=delivery_vehicle.max_vel
+        self.__current_location_speed_limit=current_location_speed_limit
 
 
 
@@ -48,11 +49,12 @@ class State:
         scaled_delivery_vehicle_location_y = self.transform_result_between_negative_one_and_positive_one(self.__delivery_vehicle_location[1]/map_max_y_axis)
         scaled_target_delivery_location_x= self.transform_result_between_negative_one_and_positive_one(self.__target_delivery_location.x/map_max_x_axis)
         scaled_target_delivery_location_y = self.transform_result_between_negative_one_and_positive_one(self.__target_delivery_location.y/ map_max_y_axis)
+        scaled_current_location_speed_limit= self.transform_result_between_negative_one_and_positive_one((self.__current_location_speed_limit/Constant.MAX_VEL))
         # self.number_of_pending_deliveries =
         return np.array([scaled_distance_to_target_delivery,scaled_sensor_one_data,scaled_sensor_two_data,scaled_sensor_three_data,
                          # scaled_sensor_four_data,scaled_sensor_five_data,scaled_sensor_six_data,scaled_senor_seven_data,scaled_sensor_eight_data,
                 scaled_delivery_vehicle_velocity,scaled_delivery_vehicle_steering_angle,scaled_delivery_vehicle_location_x
-                ,scaled_delivery_vehicle_location_y,scaled_target_delivery_location_x,scaled_target_delivery_location_y],dtype=np.float32)
+                ,scaled_delivery_vehicle_location_y,scaled_target_delivery_location_x,scaled_target_delivery_location_y,scaled_current_location_speed_limit],dtype=np.float32)
 
 
     def transform_result_between_negative_one_and_positive_one(self, value):

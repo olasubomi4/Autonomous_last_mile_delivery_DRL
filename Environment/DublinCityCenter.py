@@ -167,6 +167,8 @@ class DublinCityCenter:
         # deliveries.append((1800,600)) - trinity location
         deliveries.append(Delivery(grid.grid[61][39]))
         deliveries.append(Delivery(grid.grid[111][55]))
+        deliveries.append(Delivery(grid.grid[222][82]))
+        deliveries.append(Delivery(grid.grid[465][103]))
         return deliveries
 
     def is_surrounding_area_clear(self,x, y, grid):
@@ -225,6 +227,7 @@ class DublinCityCenter:
             return result
 
         #retry
+        print("retrying path planning for delivery")
         directions=[ (-1, 0),
             (1, 0),
             (0, -1),
