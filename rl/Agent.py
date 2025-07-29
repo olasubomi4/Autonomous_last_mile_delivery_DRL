@@ -25,7 +25,7 @@ class Agent (gym.Env):
         self.simulation= Simulation_rl()
         self.simulation._init_simulation()
         self.action_space = spaces.box.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
-        self.observation_space = spaces.box.Box(low=-1, high=1, shape=(11,), dtype=np.float32)
+        self.observation_space = spaces.box.Box(low=-1, high=1, shape=(13,), dtype=np.float32)
         self.previous_state= None
 
     def step(self,action):

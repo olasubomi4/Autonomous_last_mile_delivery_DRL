@@ -11,8 +11,8 @@ class State:
         self.__sensor_one_data = sensor_data[0]
         self.__sensor_two_data = sensor_data[1]
         self.__sensor_three_data = sensor_data[2]
-        # self.__sensor_four_data = sensor_data[3]
-        # self.__sensor_five_data = sensor_data[4]
+        self.__sensor_four_data = sensor_data[3]
+        self.__sensor_five_data = sensor_data[4]
         # self.__sensor_six_data = sensor_data[5]
         # self.__sensor_seven_data = sensor_data[6]
         # self.__sensor_eight_data = sensor_data[7]
@@ -38,8 +38,8 @@ class State:
         scaled_sensor_one_data= self.transform_result_between_negative_one_and_positive_one(self.__scale_sensor_data(self.__sensor_one_data))
         scaled_sensor_two_data=  self.transform_result_between_negative_one_and_positive_one(self.__scale_sensor_data(self.__sensor_two_data))
         scaled_sensor_three_data=  self.transform_result_between_negative_one_and_positive_one(self.__scale_sensor_data(self.__sensor_three_data))
-        # scaled_sensor_four_data=  self.transform_result_between_negative_one_and_positive_one(self.__scale_sensor_data(self.__sensor_four_data))
-        # scaled_sensor_five_data=  self.transform_result_between_negative_one_and_positive_one(self.__scale_sensor_data(self.__sensor_five_data))
+        scaled_sensor_four_data=  self.transform_result_between_negative_one_and_positive_one(self.__scale_sensor_data(self.__sensor_four_data))
+        scaled_sensor_five_data=  self.transform_result_between_negative_one_and_positive_one(self.__scale_sensor_data(self.__sensor_five_data))
         # scaled_sensor_six_data=  self.transform_result_between_negative_one_and_positive_one(self.__scale_sensor_data(self.__sensor_six_data))
         # scaled_senor_seven_data=  self.transform_result_between_negative_one_and_positive_one(self.__scale_sensor_data(self.__sensor_seven_data))
         # scaled_sensor_eight_data= self.transform_result_between_negative_one_and_positive_one( self.__scale_sensor_data(self.__sensor_eight_data))
@@ -52,7 +52,8 @@ class State:
         scaled_current_location_speed_limit= self.transform_result_between_negative_one_and_positive_one((self.__current_location_speed_limit/Constant.MAX_VEL))
         # self.number_of_pending_deliveries =
         return np.array([scaled_distance_to_target_delivery,scaled_sensor_one_data,scaled_sensor_two_data,scaled_sensor_three_data,
-                         # scaled_sensor_four_data,scaled_sensor_five_data,scaled_sensor_six_data,scaled_senor_seven_data,scaled_sensor_eight_data,
+                         scaled_sensor_four_data,scaled_sensor_five_data,
+                         # scaled_sensor_six_data,scaled_senor_seven_data,scaled_sensor_eight_data,
                 scaled_delivery_vehicle_velocity,scaled_delivery_vehicle_steering_angle,scaled_delivery_vehicle_location_x
                 ,scaled_delivery_vehicle_location_y,scaled_target_delivery_location_x,scaled_target_delivery_location_y,scaled_current_location_speed_limit],dtype=np.float32)
 
@@ -80,6 +81,10 @@ class State:
 
     def get_sensor_three_data(self):
         return self.__sensor_three_data
+    def get_sensor_four_data(self):
+        return self.__sensor_four_data
+    def get_sensor_five_data(self):
+        return self.__sensor_five_data
 
     def get_delivery_vehicle_velocity(self):
         return self.__delivery_vehicle_velocity

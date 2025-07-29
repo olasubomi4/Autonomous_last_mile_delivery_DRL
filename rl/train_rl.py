@@ -23,7 +23,7 @@ def train_TD3(env):
     td3 = TD3(
         "MlpPolicy", env,
         action_noise=action_noise,
-        verbose=1,
+        verbose=0,
         device='cpu',
         tensorboard_log=train_params_name+log_dir,
         learning_rate=learning_rate,

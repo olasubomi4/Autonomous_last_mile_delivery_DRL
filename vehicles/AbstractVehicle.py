@@ -21,7 +21,8 @@ class AbstractVehicle:
         self.rect = self.img.get_rect(center=(400, 300))
         self.start_pos = start_pos
         self.vehicle=vehicle
-        self.sensor_angles = [120,90,60]
+        # self.sensor_angles = [120,90,60]
+        self.sensor_angles = [120, 90, 60,0,180]
         # self.sensor_angles = []
 
         # self.sensor_angles = [120, 90, 60,0,180,270,300,240]

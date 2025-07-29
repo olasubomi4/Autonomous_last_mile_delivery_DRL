@@ -165,10 +165,10 @@ class DublinCityCenter:
                 i = i + 1
 
         # deliveries.append((1800,600)) - trinity location
-        deliveries.append(Delivery(grid.grid[61][39]))
-        deliveries.append(Delivery(grid.grid[111][55]))
-        deliveries.append(Delivery(grid.grid[222][82]))
-        deliveries.append(Delivery(grid.grid[465][103]))
+        # deliveries.append(Delivery(grid.grid[61][39]))
+        # deliveries.append(Delivery(grid.grid[111][55]))
+        # deliveries.append(Delivery(grid.grid[222][82]))
+        # deliveries.append(Delivery(grid.grid[465][103]))
         return deliveries
 
     def is_surrounding_area_clear(self,x, y, grid):
@@ -203,7 +203,9 @@ class DublinCityCenter:
                 heapq.heappush(self.delivery_queue,(cost_from_distance[1],delivery,cost_from_distance[0]))
 
     def get_closest_delivery(self,delivery_vehicle):
-        print(heapq.nsmallest(len(self.delivery_queue),self.delivery_queue))
+        # print(heapq.nsmallest(len(self.delivery_queue),self.delivery_queue))
+        heapq.nsmallest(len(self.delivery_queue),self.delivery_queue)
+
         closest_delivery=heapq.heappop(self.delivery_queue)
         return closest_delivery
 

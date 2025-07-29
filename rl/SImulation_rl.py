@@ -52,7 +52,7 @@ class Simulation_rl:
         self.delivery_vehicle = Car(self.RED_CAR, self.player_start_pos, Constant.MAX_VEL, 8)
 
         self.obstacles = self.env.generate_obstacles(self.grid, self.player_start_pos, num_obstacles=0)
-        self.deliveries = self.env.generate_deliveries(self.grid, self.player_start_pos, num_deliveries=0)
+        self.deliveries = self.env.generate_deliveries(self.grid, self.player_start_pos, num_deliveries=4)
 
         self.env.init_delivery_queue(self.deliveries, self.delivery_vehicle, self.grid)
 
@@ -142,7 +142,7 @@ class Simulation_rl:
             self.agent_checkpoint_position = [self.player_start_pos[0], self.player_start_pos[1],0]
             self.delivery_vehicle.update_vehicle_start_position(self.agent_checkpoint_position)
             self.delivery_vehicle.reset()
-            self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos,num_obstacles=0,num_deliveries=0)
+            self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos,num_obstacles=0,num_deliveries=4)
             self.deliveries_pending=len(self.deliveries)
             self.next_delivery()
             self.are_all_deliveries_completed_flag=False
@@ -182,7 +182,7 @@ class Simulation_rl:
 
 
 
-    def normalize_safety(self, safety_raw, min_reward=-3.0, max_reward=0):
+    def normalize_safety(self, safety_raw, min_reward=-5.0, max_reward=0):
         return 2*((safety_raw - min_reward) / (max_reward - min_reward)) - 1
 
         # return ((safety_raw - min_reward) / (max_reward - min_reward)) - 1
@@ -191,6 +191,8 @@ class Simulation_rl:
             current_state.get_sensor_one_data(),
             current_state.get_sensor_two_data(),
             current_state.get_sensor_three_data(),
+            current_state.get_sensor_four_data(),
+            current_state.get_sensor_five_data(),
         ]
 
         total_reward = 0
