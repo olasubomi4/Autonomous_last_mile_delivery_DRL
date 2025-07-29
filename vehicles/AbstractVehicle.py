@@ -21,7 +21,9 @@ class AbstractVehicle:
         self.rect = self.img.get_rect(center=(400, 300))
         self.start_pos = start_pos
         self.vehicle=vehicle
-        self.sensor_angles = [120,90,70]
+        self.sensor_angles = [120,90,60]
+        # self.sensor_angles = []
+
         # self.sensor_angles = [120, 90, 60,0,180,270,300,240]
         self.sensor_max_len = Constant.MAX_SENSOR_DISTANCE                # pixels
         self.sensor_values = [self.sensor_max_len] * len(self.sensor_angles)
@@ -99,10 +101,12 @@ class AbstractVehicle:
     def move_backward_rl(self, acceleration, grid_node):
         if grid_node is not None:
             max_speed = grid_node.get_speed_limit_for_car(self.vehicle, self.max_vel)
-            self.vel = max(self.vel + acceleration, max_speed)
+            self.vel = max(self.vel - acceleration, 0)
+            # self.vel = max(self.vel + acceleration, self.max_vel)
             # print(f"current speed {self.vel} --- current max speed {max_speed}")
         else:
-            self.vel = max(self.vel + acceleration, self.max_vel)
+            # self.vel = max(self.vel + acceleration, self.max_vel)
+            self.vel = max(self.vel - acceleration, 0)
         self.move()
 
     def move(self):
@@ -182,4 +186,3 @@ class AbstractVehicle:
             y1 = y0 - math.sin(rad) * dist
             pygame.draw.line(win, (255, 255, 225), (x0, y0), (x1, y1), 2)
             pygame.draw.circle(win, (255, 50, 50), (int(x1), int(y1)), 3)
-            pygame.display.update()

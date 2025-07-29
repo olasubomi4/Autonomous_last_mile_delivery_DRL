@@ -25,7 +25,7 @@ class Agent (gym.Env):
         self.simulation= Simulation_rl()
         self.simulation._init_simulation()
         self.action_space = spaces.box.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
-        self.observation_space = spaces.box.Box(low=-1, high=1, shape=(10,), dtype=np.float32)
+        self.observation_space = spaces.box.Box(low=-1, high=1, shape=(11,), dtype=np.float32)
         self.previous_state= None
 
     def step(self,action):
@@ -87,11 +87,11 @@ def train_TD3(env):
         verbose=1,
         device='cpu',
         tensorboard_log=log_dir,
-        learning_rate=0.0003,
-        learning_starts=3000,
-        train_freq=100,
-        gradient_steps=100,
-        policy_kwargs=dict(net_arch=[256, 256])
+        learning_rate=0.00001,
+        learning_starts=2000,
+        train_freq=50,
+        gradient_steps=50,
+        # policy_kwargs=dict(net_arch=[256, 256])
 
     )
 
@@ -102,7 +102,7 @@ def train_TD3(env):
         td3.learn(total_timesteps=timesteps,reset_num_timesteps=False)
         td3.save(f"{model_dir}/td3 _ {timesteps*iters}")
 # td3 _ 30000.zip
-def evaluate_agent(env, model_path="models/td3 _ 12000.zip"):
+def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/train13models/td3 _ 700000.zip"):
     model = TD3.load(model_path, env=env)
     state = env.reset()
 
@@ -113,7 +113,7 @@ def evaluate_agent(env, model_path="models/td3 _ 12000.zip"):
         state, reward, done, _ = env.step(action)
 
 if __name__ == "__main__":
-    train =True
+    train =False
     env = Agent()
     if train:
         train_TD3(env)

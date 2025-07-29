@@ -92,10 +92,10 @@ class Grid:
 
 
 
-    def a_star_path_planning(self,start,goal,vehicle):
+    def a_star_path_planning(self,start,goal,vehicle,directionx=0,directiony=0):
         open_set = []
 
-        start = (start[0] // Grid.CELL_SIZE, start[1] // Grid.CELL_SIZE)
+        start = ((start[0] // Grid.CELL_SIZE)+directionx, (start[1] // Grid.CELL_SIZE)+directiony)
         goal = (goal.x // Grid.CELL_SIZE, goal.y// Grid.CELL_SIZE)
 
         heapq.heappush(open_set, (0+ manhattan_distance(start[0],start[1], goal[0],goal[1]), 0, start))

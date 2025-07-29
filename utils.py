@@ -26,5 +26,7 @@ def id_generator(string_length=10):
 
     return f"{timestamp}_{random_text}"
 
+def str_to_bool(value):
+    return value.lower() in ("true", "1", "yes", "on")
 
 
