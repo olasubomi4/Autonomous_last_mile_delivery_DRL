@@ -3,6 +3,8 @@ import random
 import time
 import string
 
+from dotenv import load_dotenv
+load_dotenv()
 
 
 def scale_image(img, factor):

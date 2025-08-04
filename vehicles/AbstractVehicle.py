@@ -1,4 +1,4 @@
-from utils import scale_image, blit_rotate_center
+from utils import  blit_rotate_center
 import pygame
 import time
 import math
@@ -21,7 +21,8 @@ class AbstractVehicle:
         self.rect = self.img.get_rect(center=(400, 300))
         self.start_pos = start_pos
         self.vehicle=vehicle
-        self.sensor_angles = [120,90,60]
+        # self.sensor_angles = [120,90,60]
+        self.sensor_angles = [120, 90, 60,0,180]
         # self.sensor_angles = []
 
         # self.sensor_angles = [120, 90, 60,0,180,270,300,240]
@@ -101,12 +102,12 @@ class AbstractVehicle:
     def move_backward_rl(self, acceleration, grid_node):
         if grid_node is not None:
             max_speed = grid_node.get_speed_limit_for_car(self.vehicle, self.max_vel)
-            self.vel = max(self.vel - acceleration, 0)
+            self.vel = max(self.vel - abs(acceleration), 0.25)
             # self.vel = max(self.vel + acceleration, self.max_vel)
             # print(f"current speed {self.vel} --- current max speed {max_speed}")
         else:
             # self.vel = max(self.vel + acceleration, self.max_vel)
-            self.vel = max(self.vel - acceleration, 0)
+            self.vel = max(self.vel - abs(acceleration), 0.25)
         self.move()
 
     def move(self):
