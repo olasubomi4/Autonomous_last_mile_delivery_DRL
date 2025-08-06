@@ -11,25 +11,24 @@ class Controllers:
         self.delta = 0.1
 
     def get_manual_input(self):
-        global steering, throttle
         keys = pygame.key.get_pressed()
 
         # Steering control
         if keys[pygame.K_a]:
-            steering = max(self.steering - self.delta, -1.0)
+            self.steering = max(self.steering - self.delta, -1.0)
         elif keys[pygame.K_d]:
-            steering = min(self.steering + self.delta, 1.0)
+            self.steering = min(self.steering + self.delta, 1.0)
         else:
-            steering = 0.0
+            self.steering = 0.0
 
         # Throttle control
         if keys[pygame.K_w]:
-            throttle = min(self.throttle + self.delta, 1.0)
+            self.throttle = min(self.throttle + self.delta, 1.0)
         elif keys[pygame.K_s]:
-            throttle = max(self.throttle - self.delta, -1.0)
+            self.throttle = max(self.throttle - self.delta, -1.0)
         else:
-            throttle = 0.0
-        return np.array([steering, throttle])
+            self.throttle = 0.0
+        return np.array([self.steering, self.throttle])
 
     def get_supervisors_action(self):
         keys = pygame.key.get_pressed()

@@ -1,3 +1,4 @@
+import time
 from datetime import datetime
 from typing import Optional, Union, List
 
@@ -5,7 +6,7 @@ import gym
 from gym import spaces
 from gym.core import RenderFrame
 import numpy as np
-from stable_baselines3 import TD3
+from stable_baselines3 import TD3, SAC
 from stable_baselines3.common.noise import NormalActionNoise
 
 from rl.SImulation_rl import Simulation_rl
@@ -27,7 +28,7 @@ class Agent (gym.Env):
         self.simulation= Simulation_rl()
         self.simulation._init_simulation()
         self.action_space = spaces.box.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
-        self.observation_space = spaces.box.Box(low=-1, high=1, shape=(13,), dtype=np.float32)
+        self.observation_space = spaces.box.Box(low=-1, high=1, shape=(16,), dtype=np.float32)
         self.previous_state= None
         self.log_file=  os.environ.get("TRAIN_PARAMS_NAME","default")+"_resetting/resetting_logs.txt"
         os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
@@ -114,8 +115,8 @@ def train_TD3(env):
         td3.learn(total_timesteps=timesteps,reset_num_timesteps=False)
         td3.save(f"{model_dir}/td3 _ {timesteps*iters}")
 # td3 _ 30000.zip
-def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/train_rl_bc_v1_6rl/models/td3 _ 200000.zip"):
-    model = TD3.load(model_path, env=env)
+def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/train_rl_bc_sac_imitationrl/models/sac _ 600000.zip"):
+    model = SAC.load(model_path, env=env)
     state = env.reset()
     episodes=400
     done = False
@@ -123,21 +124,37 @@ def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Aut
     successful_delivery_sequences=0
     controller = Controllers()
     while episodes>0:
+        reward_sum=0
+        steps=0
+        # time.sleep(5)
+        start_time=time.time()
         while not done:
+
             supervisor_action=controller.get_supervisors_action()
+            # action=controller.get_manual_input()
+
             if supervisor_action is not None:
                 action = supervisor_action
             else:
                 action, _ = model.predict(state)
 
             state, reward, done, info = env.step(action)
+            reward_sum+=reward
             if info.get("completed_a_delivery", False):
                 successful_deliveries += 1
             if info.get("successfully_completed_deliveries", False):
                 successful_delivery_sequences += 1
+            if steps%15==0:
+                pass
+                # print(f"This reward {reward}")
+                # print(f"Reward for this episode: {reward_sum}")
+            steps+=1
         episodes-=1
         done = False
         env.mark_all_deliveries_as_completed()
+        print(f"Reward for this episode: {reward_sum}")
+        end_time=time.time()
+        print(f"Time taken for this episode: {end_time-start_time}")
         state=env.reset()
     print(f"Sucessful deliveries: {successful_deliveries}")
     print(f"Sucessful delivery sequences: {successful_delivery_sequences}")

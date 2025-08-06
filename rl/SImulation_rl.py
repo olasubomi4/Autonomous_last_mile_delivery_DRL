@@ -35,7 +35,7 @@ class Simulation_rl:
         self.WIDTH, self.HEIGHT = self.TRACK.get_width(), self.TRACK.get_height()
 
         self.WIN = pygame.display.set_mode((Constant.PYGAME_DISPLAY_MODE_WIDTH,Constant.PYGAME_DISPLAY_MODE_HEIGHT))
-        pygame.display.set_caption("Dublin city center")
+        pygame.display.set_caption(os.environ.get("TRAIN_PARAMS_NAME","default"))
 
 
         self.env = DublinCityCenter(self.TRACK, self.TRACK_BORDER, self.OBSTACLE,
@@ -80,6 +80,7 @@ class Simulation_rl:
         self.FPS = 60
         self.previous_vehicle_to_target_delivery_distance= Constant.MAX_INT_SIZE
         self.max_change_in_manhattan_distance=None
+        self.delivery_vehicle_idle_steps=0
 
     def next_delivery(self):
         self.agent_checkpoint_position = [self.delivery_vehicle.x, self.delivery_vehicle.y,self.delivery_vehicle.angle]
@@ -155,7 +156,7 @@ class Simulation_rl:
         self.clock.tick(self.FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                # run = False
+                pygame.quit()
                 break
 
         pygame.display.update()
@@ -165,6 +166,11 @@ class Simulation_rl:
             return 0.05
         efficiency_weight = float(os.getenv("EFFICIENCY_WEIGHT",0.5))
         safety_weight = float(os.getenv("SAFETY_REWARD",0.5))
+
+        if self.is_delivery_vehicle_idle():
+            self.delivery_vehicle_idle_steps+=1
+        else:
+            self.delivery_vehicle_idle_steps=0
 
         efficiency_reward = self.calculate_efficiency_reward(previous_state, current_state)  # in [-1, 1]
         safety_reward = self.calculate_safety_reward(current_state)  # in [-1, 0]
@@ -177,19 +183,24 @@ class Simulation_rl:
         if weighted_reward>0.5:
             print("Stop here")
 
-        time_step_punishment=0.05
-        return weighted_reward-time_step_punishment
+        time_step_punishment=self.get_time_step_punishment()
+
+        return max(weighted_reward-time_step_punishment,-1.0)
 
     def transform_result_between_negative_one_and_positive_one(self, value):
         return 2*value - 1
 
+    def is_delivery_vehicle_idle(self):
+        return self.delivery_vehicle.vel == 0
 
+    def get_time_step_punishment(self):
+        return Constant.TIMESTEP_PUNISHMENT * self.delivery_vehicle_idle_steps
 
     def normalize_safety(self, safety_raw, min_reward=-5.0, max_reward=0):
         # return 2*((safety_raw - min_reward) / (max_reward - min_reward)) - 1
         return ((safety_raw - min_reward) / (max_reward - min_reward)) - 1
     def calculate_safety_reward(self,current_state: State) -> float:
-        sensors = [
+        forward_movement_sensors = [
             current_state.get_sensor_one_data(),
             current_state.get_sensor_two_data(),
             current_state.get_sensor_three_data(),
@@ -197,16 +208,36 @@ class Simulation_rl:
             current_state.get_sensor_five_data(),
         ]
 
+        backward_movement_sensors = [
+            current_state.get_sensor_six_data(),
+            current_state.get_sensor_seven_data(),
+            current_state.get_sensor_eight_data(),
+            current_state.get_sensor_four_data(),
+            current_state.get_sensor_five_data()
+        ]
+
         total_reward = 0
-        for sensor in sensors:
-            distance = sensor[0]
-            if sensor[2] == 1:
-                if distance >= Constant.MAX_SENSOR_DISTANCE :
-                    total_reward += 0
-                elif distance <= 14:
-                    total_reward -= 1
-                else:
-                    total_reward -= (Constant.MAX_SENSOR_DISTANCE - distance) / (Constant.MAX_SENSOR_DISTANCE-14)
+        if self.delivery_vehicle.vel >= 0:
+            for sensor in forward_movement_sensors:
+                distance = sensor[0]
+                if sensor[2] == 1:
+                    if distance >= Constant.MAX_SENSOR_DISTANCE :
+                        total_reward += 0
+                    elif distance <= 14:
+                        total_reward -= 1
+                    else:
+                        total_reward -= (Constant.MAX_SENSOR_DISTANCE - distance) / (Constant.MAX_SENSOR_DISTANCE-14)
+
+        else:
+            for sensor in backward_movement_sensors:
+                distance = sensor[0]
+                if sensor[2] == 1:
+                    if distance >= Constant.MAX_SENSOR_DISTANCE:
+                        total_reward += 0
+                    elif distance <= 14:
+                        total_reward -= 1
+                    else:
+                        total_reward -= (Constant.MAX_SENSOR_DISTANCE - distance) / (Constant.MAX_SENSOR_DISTANCE - 14)
 
         return total_reward
 
@@ -247,6 +278,7 @@ class Simulation_rl:
         return max(-1.0, min(1.0, reward))
 
     def calculate_efficiency_reward_v3(self, previous_state: State, current_state: State) -> float:
+
         delivery_vehicle_position_at_previous_state = previous_state.get_delivery_vehicle_location()
         delivery_destination = self.target_delivery[1].delivery_destination
         previous_distance = manhattan_distance(delivery_vehicle_position_at_previous_state[0],

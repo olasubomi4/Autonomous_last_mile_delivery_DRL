@@ -162,8 +162,7 @@ class DublinCityCenter:
         use_cached_delivery_sequence=str_to_bool(os.environ.get("USE_CACHED_DELIVERY_SEQUENCE","False"))
         if use_cached_delivery_sequence:
             return self.generate_deliveries_from_cache(cache_sequence_deliveries_counter)
-
-        # num_deliveries=0
+        num_deliveries=0
         while i < num_deliveries:
             delivery_vehicle_start_pos_x,delivery_vehicle_start_pos_y = delivery_vehicle_start_pos[0] // Grid.CELL_SIZE, delivery_vehicle_start_pos[1] // Grid.CELL_SIZE
             start_pos_grid_node = grid.grid[delivery_vehicle_start_pos_x][delivery_vehicle_start_pos_y]
@@ -178,10 +177,11 @@ class DublinCityCenter:
                 i = i + 1
 
         # deliveries.append((1800,600)) - trinity location
-        # deliveries.append(Delivery(grid.grid[61][39]))
-        # deliveries.append(Delivery(grid.grid[111][55]))
-        # deliveries.append(Delivery(grid.grid[222][82]))
-        # deliveries.append(Delivery(grid.grid[465][103]))
+        deliveries.append(Delivery(grid.grid[61][39]))
+        deliveries.append(Delivery(grid.grid[111][55]))
+        deliveries.append(Delivery(grid.grid[222][82]))
+        deliveries.append(Delivery(grid.grid[465][103]))
+        # deliveries.append(self.generate_deliveries_from_cache(cache_sequence_deliveries_counter)[2])
         return deliveries
 
 
@@ -226,7 +226,7 @@ class DublinCityCenter:
         ]
 
         for dx, dy in directions:
-            for step in range(1, 4):
+            for step in range(1, 5):
                 nx = x + (dx * step)
                 ny = y + (dy * step)
                 if 0 <= nx < grid.width and 0 <= ny < grid.height:

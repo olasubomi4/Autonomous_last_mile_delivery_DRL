@@ -22,10 +22,10 @@ class AbstractVehicle:
         self.start_pos = start_pos
         self.vehicle=vehicle
         # self.sensor_angles = [120,90,60]
-        self.sensor_angles = [120, 90, 60,0,180]
+        # self.sensor_angles = [120, 90, 60,0,180]
         # self.sensor_angles = []
 
-        # self.sensor_angles = [120, 90, 60,0,180,270,300,240]
+        self.sensor_angles = [120, 90, 60,0,180,270,300,240]
         self.sensor_max_len = Constant.MAX_SENSOR_DISTANCE                # pixels
         self.sensor_values = [self.sensor_max_len] * len(self.sensor_angles)
         self.car_center=self.rect.center
@@ -101,13 +101,15 @@ class AbstractVehicle:
 
     def move_backward_rl(self, acceleration, grid_node):
         if grid_node is not None:
-            max_speed = grid_node.get_speed_limit_for_car(self.vehicle, self.max_vel)
-            self.vel = max(self.vel - abs(acceleration), 0.25)
+            self.max_speed = grid_node.get_speed_limit_for_car(self.vehicle, self.max_vel)
+            # self.vel = max(self.vel - abs(acceleration), 0.25)
+            self.vel = max(self.vel - abs(acceleration), -self.max_speed/2)
             # self.vel = max(self.vel + acceleration, self.max_vel)
             # print(f"current speed {self.vel} --- current max speed {max_speed}")
         else:
             # self.vel = max(self.vel + acceleration, self.max_vel)
-            self.vel = max(self.vel - abs(acceleration), 0.25)
+            # self.vel = max(self.vel - abs(acceleration), 0.25)
+            self.vel = max(self.vel - abs(acceleration),-self.max_speed/2)
         self.move()
 
     def move(self):
@@ -181,9 +183,34 @@ class AbstractVehicle:
         x0 = self.car_center[0]
         y0 = self.car_center[1]
 
-        for ang, dist in zip(self.sensor_angles, self.sensor_values):
-            rad = math.radians(self.angle + ang)
-            x1 = x0 + math.cos(rad) * dist
-            y1 = y0 - math.sin(rad) * dist
-            pygame.draw.line(win, (255, 255, 225), (x0, y0), (x1, y1), 2)
-            pygame.draw.circle(win, (255, 50, 50), (int(x1), int(y1)), 3)
+        forward_sensors = [
+            (self.sensor_values[0], self.sensor_angles[0]),
+            (self.sensor_values[1], self.sensor_angles[1]),
+            (self.sensor_values[2], self.sensor_angles[2]),
+            (self.sensor_values[3], self.sensor_angles[3]),
+            (self.sensor_values[4], self.sensor_angles[4]),
+        ]
+
+        backward_sensors = [
+            (self.sensor_values[3], self.sensor_angles[3]),
+            (self.sensor_values[4], self.sensor_angles[4]),
+            (self.sensor_values[5], self.sensor_angles[5]),
+            (self.sensor_values[6], self.sensor_angles[6]),
+            (self.sensor_values[7], self.sensor_angles[7]),
+        ]
+
+        if self.vel >= 0:
+            for  dist ,ang in forward_sensors:
+                rad = math.radians(self.angle + ang)
+                x1 = x0 + math.cos(rad) * dist
+                y1 = y0 - math.sin(rad) * dist
+                pygame.draw.line(win, (255, 255, 225), (x0, y0), (x1, y1), 2)
+                pygame.draw.circle(win, (255, 50, 50), (int(x1), int(y1)), 3)
+
+        else:
+            for dist,ang in backward_sensors:
+                rad = math.radians(self.angle + ang)
+                x1 = x0 + math.cos(rad) * dist
+                y1 = y0 - math.sin(rad) * dist
+                pygame.draw.line(win, (255, 255, 225), (x0, y0), (x1, y1), 2)
+                pygame.draw.circle(win, (255, 50, 50), (int(x1), int(y1)), 3)
