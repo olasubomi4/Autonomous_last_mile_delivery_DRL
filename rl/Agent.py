@@ -12,7 +12,8 @@ from stable_baselines3.common.noise import NormalActionNoise
 from rl.SImulation_rl import Simulation_rl
 import os
 from rl.Controllers import Controllers
-
+from utils import is_time_difference_greater_than_threshold
+from Constant import Constant
 log_dir ="logs"
 
 model_dir ="models"
@@ -32,6 +33,10 @@ class Agent (gym.Env):
         self.previous_state= None
         self.log_file=  os.environ.get("TRAIN_PARAMS_NAME","default")+"_resetting/resetting_logs.txt"
         os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
+        self.delivery_sequence_start_time=datetime.now()
+        self.delivery_collision_counter=0
+        self.delivery_timeout_counter=0
+
 
     def step(self,action):
         self.simulation.draw()
@@ -45,33 +50,50 @@ class Agent (gym.Env):
         self.previous_state=state
         done =self.simulation.is_finished()
         if self.simulation.does_car_collide_with_obstacle():
-            self.simulation.reset_car()
+            self.delivery_sequence_start_time = datetime.now()
+            self.delivery_collision_counter=self.delivery_collision_counter+1
+            if self.is_difficult_delivery():
+                self.handle_deliveries_difficult_for_the_agent()
+            else:
+                self.simulation.reset_car()
             reward =-1
             done=True
         elif self.simulation.does_car_collide_with_border():
-            self.simulation.reset_car()
+            self.delivery_sequence_start_time = datetime.now()
+            self.delivery_collision_counter=self.delivery_collision_counter+1
+            if self.is_difficult_delivery():
+                self.handle_deliveries_difficult_for_the_agent()
+            else:
+                self.simulation.reset_car()
             reward =-1
             done = True
         elif self.simulation.has_reached_destination():
-            print("Reached destination")
+            message="Reached destination"
+            self.log(message)
             info["completed_a_delivery"] = True
             self.simulation.mark_delivery_completed()
+            done = True
             if self.simulation.is_finished():
                 info["successfully_completed_deliveries"]=True
                 self.simulation.are_all_deliveries_completed_flag=True
-                # self.previous_state = None
-                # self.simulation.reset()
-                done=True
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                message = f"[{timestamp}] resetting environment"
-                print(message)
-                with open(self.log_file,"a+") as f:
-                    f.write(message+"\n")
+                message = f" resetting environment "
+                self.log(message)
             else:
                 self.simulation.next_delivery()
             reward=1
+            self.delivery_sequence_start_time = datetime.now()
+            self.reset_counters()
 
-
+        elif is_time_difference_greater_than_threshold(self.delivery_sequence_start_time,datetime.now(),Constant.MAXIMUM_DELIVERY_SEQUENCE_TIME_IN_MINUTES):
+            self.delivery_timeout_counter = self.delivery_timeout_counter + 1
+            if self.is_difficult_delivery():
+               self.handle_deliveries_difficult_for_the_agent()
+            else:
+                self.simulation.reset_car()
+            done = True
+            message = f" Exceeded delivery time "
+            self.log(message)
+            self.delivery_sequence_start_time = datetime.now()
             # done=True
         # elif self.simulation.
 
@@ -81,7 +103,6 @@ class Agent (gym.Env):
     def reset(self):
         self.previous_state = None
         self.simulation.reset()
-
         state= self.simulation.get_state().scale_state_values()
         return state
 
@@ -90,6 +111,39 @@ class Agent (gym.Env):
 
     def mark_all_deliveries_as_completed(self):
         self.simulation.are_all_deliveries_completed_flag=True
+
+    def is_difficult_delivery(self):
+        if self.delivery_collision_counter >= Constant.COLLISIONS_BEFORE_SKIP_DELIVERY:
+            return True
+
+        elif self.delivery_timeout_counter >= Constant.TIMEOUTS_BEFORE_SKIP_DELIVERY:
+            return True
+
+        return False
+
+    def handle_deliveries_difficult_for_the_agent(self):
+        self.simulation.mark_delivery_completed()
+        message = f" moving to next delivery due to multiple delivery timeout"
+        self.log(message)
+
+        if self.simulation.is_finished():
+            self.simulation.are_all_deliveries_completed_flag = True
+            message = f" resetting environment "
+            self.log(message)
+        else:
+            self.simulation.next_delivery()
+        self.reset_counters()
+
+    def reset_counters(self):
+        self.delivery_collision_counter=0
+        self.delivery_timeout_counter=0
+
+    def log(self,message):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        message = f"[{timestamp}] {message}"
+        print(message)
+        with open(self.log_file, "a+") as f:
+            f.write(message + "\n")
 
 
 def train_TD3(env):
@@ -116,7 +170,7 @@ def train_TD3(env):
         td3.save(f"{model_dir}/td3 _ {timesteps*iters}")
 # td3 _ 30000.zip
 def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/train_rl_bc_sac_imitationrl/models/sac _ 600000.zip"):
-    model = SAC.load(model_path, env=env)
+    # model = SAC.load(model_path, env=env)
     state = env.reset()
     episodes=400
     done = False
@@ -130,13 +184,13 @@ def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Aut
         start_time=time.time()
         while not done:
 
-            supervisor_action=controller.get_supervisors_action()
-            # action=controller.get_manual_input()
+            # supervisor_action=controller.get_supervisors_action()
+            action=controller.get_manual_input()
 
-            if supervisor_action is not None:
-                action = supervisor_action
-            else:
-                action, _ = model.predict(state)
+            # if supervisor_action is not None:
+            #     action = supervisor_action
+            # else:
+            #     action, _ = model.predict(state)
 
             state, reward, done, info = env.step(action)
             reward_sum+=reward
@@ -146,7 +200,7 @@ def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Aut
                 successful_delivery_sequences += 1
             if steps%15==0:
                 pass
-                # print(f"This reward {reward}")
+                print(f"This reward {reward}")
                 # print(f"Reward for this episode: {reward_sum}")
             steps+=1
         episodes-=1

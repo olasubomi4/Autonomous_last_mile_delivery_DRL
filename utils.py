@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pygame
 import random
 import time
@@ -30,5 +32,9 @@ def id_generator(string_length=10):
 
 def str_to_bool(value):
     return value.lower() in ("true", "1", "yes", "on")
+
+def is_time_difference_greater_than_threshold(initiation_time:datetime,current_time:datetime,time_threshold):
+    diff_minutes = (current_time - initiation_time).total_seconds() / 60
+    return diff_minutes > time_threshold
 
 

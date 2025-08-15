@@ -1,4 +1,5 @@
 import random
+import uuid
 from pathlib import Path
 
 import joblib
@@ -45,7 +46,7 @@ def train_TD3(env):
         controller = Controllers()
         obs = env.reset()
         done = False
-        i=100
+        i=110
         while i>0:
             while not done:
                 action = controller.get_manual_input()
@@ -82,7 +83,7 @@ def train_TD3(env):
 
 
     if not imitate:
-        transitions=joblib.load("/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/rl/imitation_transitions/train_rl_imitationimitatet3.pkl")
+        transitions=joblib.load("/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/rl/imitation_transitions/train_rl_imitation_data_14-08-2025imitatet2.pkl")
 
         # transitions= joblib.load("/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/rl/imitation_transitions/train_rl_bc_random_reverse_v1imitatet2.pkl")
         # transitions=joblib.load("/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/rl/imitation_transitions/train_rl_bc_reverse_1imitatet1.pkl")
@@ -105,7 +106,12 @@ def train_TD3(env):
 
         except Exception as e:
             print(f"Failed to save transition: in desired path due to {e}")
-            joblib.dump(transitions, "rl/imitation_transitions/" + train_params_name + experience_name + ".pkl")
+            try:
+                joblib.dump(transitions, "rl/imitation_transitions/" + train_params_name + experience_name + ".pkl")
+            except Exception as e:
+                print(f"Failed to save transition: in default path due to {e}")
+                joblib.dump(transitions, f"rl/imitation_transitions/{str(uuid.uuid4())}.pkl")
+
 
 
     if not imitate:

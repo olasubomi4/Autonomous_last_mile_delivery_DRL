@@ -1,5 +1,6 @@
 import joblib
 
+from Constant import Constant
 from Environment.Color import Color
 from Environment.GridNode import GridNode
 from vehicles.Car import Car
@@ -11,7 +12,7 @@ from utils import manhattan_distance
 class Grid:
     OBSTACLE = scale_image(pygame.image.load("/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/imgs/obstacle8.png"), 0.02)
     OBSTACLE_MASK = pygame.mask.from_surface(OBSTACLE)
-    CELL_SIZE=6
+    CELL_SIZE=Constant.CELL_SIZE
     def __init__(self, width, height,track):
         self.grid = [
             [GridNode(i, j, Color.RED.value) for j in range(0, height, Grid.CELL_SIZE)]

@@ -174,8 +174,10 @@ class Simulation_rl:
 
         efficiency_reward = self.calculate_efficiency_reward(previous_state, current_state)  # in [-1, 1]
         safety_reward = self.calculate_safety_reward(current_state)  # in [-1, 0]
-
         normalized_safety = self.normalize_safety(safety_reward)
+        if self.agent_is_in_a_deadend(efficiency_reward,normalized_safety):
+            return -1.0
+
         weighted_reward = (
                 efficiency_weight * efficiency_reward +
                 safety_weight * normalized_safety
@@ -289,6 +291,12 @@ class Simulation_rl:
         max_change_in_manhattan_distance = self.get_max_manhattan_step_distance()
         reward = (previous_distance - current_distance) / max_change_in_manhattan_distance
         return reward
+
+    def agent_is_in_a_deadend(self, efficiency_reward, safety_reward) -> float:
+        if efficiency_reward>=0 and safety_reward<=-0.35:
+            return True
+        else:
+            return False
 
     def get_max_manhattan_step_distance(self):
         if self.max_change_in_manhattan_distance is not None:
