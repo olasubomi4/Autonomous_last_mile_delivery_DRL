@@ -1,14 +1,20 @@
+import copy
+import os
+
 import pygame
 
+from Constant import Constant
 from DeliveryStates import DeliveryStates
 from Environment.Grid import Grid
-from utils import blit_rotate_center, manhattan_distance
+from utils import blit_rotate_center, manhattan_distance, str_to_bool, scale_delivery_location_to_grid_cell_size
 import random
 import time
 import heapq
-
+import joblib
+from dotenv import load_dotenv
 from vehicles.Delivery import Delivery
 
+load_dotenv()
 
 class DublinCityCenter:
     def __init__(self, track,track_border,obstacle,delivery_location,vehicle,win,width,height):
@@ -24,6 +30,9 @@ class DublinCityCenter:
         self.track_border_mask,self.obstacle_mask,self.delivery_location_mask = self.generate_masks()
         self.delivery_queue = []
         heapq.heapify(self.delivery_queue)
+        self.delivery_sequence_cache=self.load_delivery_sequence_cache()
+        self.reset_counter=0
+        # self.test_delivery_sequence_cache=[]
 
     def generate_masks(self):
         TRACK_BORDER_MASK = pygame.mask.from_surface(self.track_border)
@@ -148,9 +157,13 @@ class DublinCityCenter:
                 print(f"error at {x} -{y}")
         return obstacles
 
-    def generate_deliveries(self,grid,delivery_vehicle_start_pos,num_deliveries: int = 4, obstacles=[]):
+    def generate_deliveries(self,grid,delivery_vehicle_start_pos,num_deliveries: int = 4, cache_sequence_deliveries_counter=0):
         deliveries = []
         i = 0
+        use_cached_delivery_sequence=str_to_bool(os.environ.get("USE_CACHED_DELIVERY_SEQUENCE","False"))
+        if use_cached_delivery_sequence:
+            return self.generate_deliveries_from_cache(cache_sequence_deliveries_counter)
+        # num_deliveries=0
         while i < num_deliveries:
             delivery_vehicle_start_pos_x,delivery_vehicle_start_pos_y = delivery_vehicle_start_pos[0] // Grid.CELL_SIZE, delivery_vehicle_start_pos[1] // Grid.CELL_SIZE
             start_pos_grid_node = grid.grid[delivery_vehicle_start_pos_x][delivery_vehicle_start_pos_y]
@@ -165,11 +178,63 @@ class DublinCityCenter:
                 i = i + 1
 
         # deliveries.append((1800,600)) - trinity location
-        deliveries.append(Delivery(grid.grid[61][39]))
-        deliveries.append(Delivery(grid.grid[111][55]))
-        deliveries.append(Delivery(grid.grid[222][82]))
-        deliveries.append(Delivery(grid.grid[465][103]))
+        # for x,y in Constant.EASY_DELIVERY_LOCATIONS:
+        #     xd,yd= scale_delivery_location_to_grid_cell_size(x,y)
+        #     deliveries.append(Delivery(grid.grid[xd][yd]))
+        #     if len(deliveries)>num_deliveries:
+        #         break
+        # deliveries.append(Delivery(grid.grid[61][39]))
+        # deliveries.append(Delivery(grid.grid[111][55]))
+        # deliveries.append(Delivery(grid.grid[222][82]))
+        # deliveries.append(Delivery(grid.grid[465][103]))
+        # deliveries.append(self.generate_deliveries_from_cache(cache_sequence_deliveries_counter)[2])
         return deliveries
+
+    def generate_deliveries_from_desired_location_list(self,grid,delivery_vehicle_start_pos,delivery_list=Constant.EASY_DELIVERY_LOCATIONS):
+        deliveries = []
+        i = 0
+        for x,y in delivery_list:
+            delivery_vehicle_start_pos_x,delivery_vehicle_start_pos_y = delivery_vehicle_start_pos[0] // Grid.CELL_SIZE, delivery_vehicle_start_pos[1] // Grid.CELL_SIZE
+            start_pos_grid_node = grid.grid[delivery_vehicle_start_pos_x][delivery_vehicle_start_pos_y]
+            xd,yd= scale_delivery_location_to_grid_cell_size(x,y)
+            delivery_grid_node = grid.grid[xd][yd]
+
+            if start_pos_grid_node != delivery_grid_node and (not delivery_grid_node.is_blocked ) and delivery_grid_node.is_road and self.is_surrounding_area_clear(x,y,grid):
+                deliveries.append(
+                    Delivery(delivery_grid_node)
+                )
+                i = i + 1
+            else:
+                print(f"delivery location {x},{y} is blocked")
+        return deliveries
+
+    def generate_deliveries_from_cache(self,cache_sequence_deliveries_counter=0):
+        cache_sequence_deliveries_counter= (cache_sequence_deliveries_counter%len(self.delivery_sequence_cache))
+        deliveries=self.delivery_sequence_cache[cache_sequence_deliveries_counter]
+        deliveries =copy.deepcopy(deliveries)
+        return deliveries
+
+
+    def load_delivery_sequence_cache(self):
+        is_imitation_learning=str_to_bool(os.environ.get("IS_IMITATION_LEARNING_MODE","False"))
+
+        if is_imitation_learning:
+            imitation_learning_cache_file_path = os.environ.get("IMITATION_LEARNING_DELIVERY_SEQUENCE_CACHE_FILE_PATH", None)
+            if imitation_learning_cache_file_path is None:
+                return []
+            else:
+                return joblib.load(imitation_learning_cache_file_path)
+        is_train=str_to_bool(os.environ.get("IS_TRAIN_MODE","True"))
+        if is_train:
+            train_cache_file_path=os.environ.get("TRAIN_DELIVERY_SEQUENCE_CACHE_FILE_PATH",None)
+            if train_cache_file_path is None:
+                return []
+            return joblib.load(train_cache_file_path)
+        else:
+            test_cache_file_path = os.environ.get("TEST_DELIVERY_SEQUENCE_CACHE_FILE_PATH", None)
+            if test_cache_file_path is None:
+                return []
+            return joblib.load(test_cache_file_path)
 
     def is_surrounding_area_clear(self,x, y, grid):
         directions = [
@@ -184,7 +249,7 @@ class DublinCityCenter:
         ]
 
         for dx, dy in directions:
-            for step in range(1, 4):
+            for step in range(1, 5):
                 nx = x + (dx * step)
                 ny = y + (dy * step)
                 if 0 <= nx < grid.width and 0 <= ny < grid.height:
@@ -203,7 +268,9 @@ class DublinCityCenter:
                 heapq.heappush(self.delivery_queue,(cost_from_distance[1],delivery,cost_from_distance[0]))
 
     def get_closest_delivery(self,delivery_vehicle):
-        print(heapq.nsmallest(len(self.delivery_queue),self.delivery_queue))
+        # print(heapq.nsmallest(len(self.delivery_queue),self.delivery_queue))
+        heapq.nsmallest(len(self.delivery_queue),self.delivery_queue)
+
         closest_delivery=heapq.heappop(self.delivery_queue)
         return closest_delivery
 
@@ -214,8 +281,9 @@ class DublinCityCenter:
                 delivery.delivery_state = DeliveryStates.PENDING
 
     def reset(self,grid,delivery_vehicle_start_pos,num_obstacles=10,num_deliveries=4):
+        self.reset_counter=self.reset_counter+1
         obstacles = self.generate_obstacles(grid, delivery_vehicle_start_pos, num_obstacles)
-        deliveries = self.generate_deliveries(grid, delivery_vehicle_start_pos, num_deliveries)
+        deliveries = self.generate_deliveries(grid, delivery_vehicle_start_pos, num_deliveries,self.reset_counter)
         start_time = time.time()
         return obstacles, deliveries, start_time
 

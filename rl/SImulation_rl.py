@@ -21,11 +21,11 @@ class Simulation_rl:
     def _init_simulation(self):
         pygame.init()
         basepath="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/"
-        self.TRACK = scale_image(pygame.image.load(basepath+"imgs/track4.png"), 1)
-        self.TRACK_BORDER = scale_image(pygame.image.load(basepath+"imgs/track-border4.png"), 1)
-        self.OBSTACLE = scale_image(pygame.image.load(basepath+"imgs/obstacle8.png"), 0.02)
-        self.DELIVERY_LOCATION = scale_image(pygame.image.load(basepath+"imgs/delivery-locations-icon.png"), 0.05)
-        self.RED_CAR = scale_image(pygame.image.load(basepath+"imgs/red-car.png"), 0.2)
+        self.TRACK = scale_image(pygame.image.load(basepath+"imgs/track4.png"), Constant.TRACK_SCALE_FACTOR)
+        self.TRACK_BORDER = scale_image(pygame.image.load(basepath+"imgs/track-border4.png"), Constant.TRACK_BORDER_SCALE_FACTOR)
+        self.OBSTACLE = scale_image(pygame.image.load(basepath+"imgs/obstacle8.png"), Constant.OBSTACLE_SCALE_FACTOR)
+        self.DELIVERY_LOCATION = scale_image(pygame.image.load(basepath+"imgs/delivery-locations-icon.png"), Constant.DELIVERY_LOCATION_SCALE_FACTOR)
+        self.RED_CAR = scale_image(pygame.image.load(basepath+"imgs/red-car.png"), Constant.CAR_SCALE_FACTOR)
 
         # Create masks
         self.TRACK_BORDER_MASK = pygame.mask.from_surface(self.TRACK_BORDER)
@@ -34,8 +34,8 @@ class Simulation_rl:
 
         self.WIDTH, self.HEIGHT = self.TRACK.get_width(), self.TRACK.get_height()
 
-        self.WIN = pygame.display.set_mode((1300, 800))
-        pygame.display.set_caption("Dublin city center")
+        self.WIN = pygame.display.set_mode((Constant.PYGAME_DISPLAY_MODE_WIDTH,Constant.PYGAME_DISPLAY_MODE_HEIGHT))
+        pygame.display.set_caption(os.environ.get("TRAIN_PARAMS_NAME","default"))
 
 
         self.env = DublinCityCenter(self.TRACK, self.TRACK_BORDER, self.OBSTACLE,
@@ -46,13 +46,13 @@ class Simulation_rl:
         self.grid.generate_grid(self.RED_CAR, self.TRACK_BORDER_MASK)
         self.images = [(self.TRACK, (0, 0)), (self.TRACK_BORDER, (0, 0))]
 
-        self.player_start_pos = [220, 370]
-        self.agent_checkpoint_position = [220, 370,0]
+        self.player_start_pos = [Constant.DELIVERY_VEHICLE_START_POS_X, Constant.DELIVERY_VEHICLE_START_POS_Y]
+        self.agent_checkpoint_position = [Constant.DELIVERY_VEHICLE_START_POS_X, Constant.DELIVERY_VEHICLE_START_POS_Y,0]
 
         self.delivery_vehicle = Car(self.RED_CAR, self.player_start_pos, Constant.MAX_VEL, 8)
 
         self.obstacles = self.env.generate_obstacles(self.grid, self.player_start_pos, num_obstacles=0)
-        self.deliveries = self.env.generate_deliveries(self.grid, self.player_start_pos, num_deliveries=0)
+        self.deliveries = self.env.generate_deliveries(self.grid, self.player_start_pos, num_deliveries=4)
 
         self.env.init_delivery_queue(self.deliveries, self.delivery_vehicle, self.grid)
 
@@ -79,6 +79,8 @@ class Simulation_rl:
         self.clock = pygame.time.Clock()
         self.FPS = 60
         self.previous_vehicle_to_target_delivery_distance= Constant.MAX_INT_SIZE
+        self.max_change_in_manhattan_distance=None
+        self.delivery_vehicle_idle_steps=0
 
     def next_delivery(self):
         self.agent_checkpoint_position = [self.delivery_vehicle.x, self.delivery_vehicle.y,self.delivery_vehicle.angle]
@@ -142,7 +144,7 @@ class Simulation_rl:
             self.agent_checkpoint_position = [self.player_start_pos[0], self.player_start_pos[1],0]
             self.delivery_vehicle.update_vehicle_start_position(self.agent_checkpoint_position)
             self.delivery_vehicle.reset()
-            self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos,num_obstacles=0,num_deliveries=0)
+            self.obstacles, self.deliveries, self.start_time = self.env.reset(self.grid, self.player_start_pos,num_obstacles=0,num_deliveries=4)
             self.deliveries_pending=len(self.deliveries)
             self.next_delivery()
             self.are_all_deliveries_completed_flag=False
@@ -154,7 +156,7 @@ class Simulation_rl:
         self.clock.tick(self.FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                # run = False
+                pygame.quit()
                 break
 
         pygame.display.update()
@@ -165,44 +167,79 @@ class Simulation_rl:
         efficiency_weight = float(os.getenv("EFFICIENCY_WEIGHT",0.5))
         safety_weight = float(os.getenv("SAFETY_REWARD",0.5))
 
+        if self.is_delivery_vehicle_idle():
+            self.delivery_vehicle_idle_steps+=1
+        else:
+            self.delivery_vehicle_idle_steps=0
+
         efficiency_reward = self.calculate_efficiency_reward(previous_state, current_state)  # in [-1, 1]
         safety_reward = self.calculate_safety_reward(current_state)  # in [-1, 0]
-
         normalized_safety = self.normalize_safety(safety_reward)
+        if self.agent_is_in_a_deadend(efficiency_reward,normalized_safety):
+            return -1.0
+
         weighted_reward = (
                 efficiency_weight * efficiency_reward +
                 safety_weight * normalized_safety
         )
+        if weighted_reward>0.5:
+            print("Stop here")
 
-        time_step_punishment=0.01
-        return weighted_reward-time_step_punishment
+        time_step_punishment=self.get_time_step_punishment()
+
+        return max(weighted_reward-time_step_punishment,-1.0)
 
     def transform_result_between_negative_one_and_positive_one(self, value):
         return 2*value - 1
 
+    def is_delivery_vehicle_idle(self):
+        return self.delivery_vehicle.vel == 0
 
+    def get_time_step_punishment(self):
+        return Constant.TIMESTEP_PUNISHMENT * self.delivery_vehicle_idle_steps
 
-    def normalize_safety(self, safety_raw, min_reward=-3.0, max_reward=0):
-        return 2*((safety_raw - min_reward) / (max_reward - min_reward)) - 1
-
-        # return ((safety_raw - min_reward) / (max_reward - min_reward)) - 1
+    def normalize_safety(self, safety_raw, min_reward=-5.0, max_reward=0):
+        # return 2*((safety_raw - min_reward) / (max_reward - min_reward)) - 1
+        return ((safety_raw - min_reward) / (max_reward - min_reward)) - 1
     def calculate_safety_reward(self,current_state: State) -> float:
-        sensors = [
+        forward_movement_sensors = [
             current_state.get_sensor_one_data(),
             current_state.get_sensor_two_data(),
             current_state.get_sensor_three_data(),
+            current_state.get_sensor_four_data(),
+            current_state.get_sensor_five_data(),
+        ]
+
+        backward_movement_sensors = [
+            current_state.get_sensor_six_data(),
+            current_state.get_sensor_seven_data(),
+            current_state.get_sensor_eight_data(),
+            current_state.get_sensor_four_data(),
+            current_state.get_sensor_five_data()
         ]
 
         total_reward = 0
-        for sensor in sensors:
-            distance = sensor[0]
-            if sensor[2] == 0:
-                if distance >= Constant.MAX_SENSOR_DISTANCE :
-                    total_reward += 0
-                elif distance <= 14:
-                    total_reward -= 1
-                else:
-                    total_reward -= (Constant.MAX_SENSOR_DISTANCE - distance) / (Constant.MAX_SENSOR_DISTANCE-14)
+        if self.delivery_vehicle.vel >= 0:
+            for sensor in forward_movement_sensors:
+                distance = sensor[0]
+                if sensor[2] == 1:
+                    if distance >= Constant.MAX_SENSOR_DISTANCE :
+                        total_reward += 0
+                    elif distance <= 14:
+                        total_reward -= 1
+                    else:
+                        total_reward -= (Constant.MAX_SENSOR_DISTANCE - distance) / (Constant.MAX_SENSOR_DISTANCE-14)
+
+        else:
+            for sensor in backward_movement_sensors:
+                distance = sensor[0]
+                if sensor[2] == 1:
+                    if distance >= Constant.MAX_SENSOR_DISTANCE:
+                        total_reward += 0
+                    elif distance <= 14:
+                        total_reward -= 1
+                    else:
+                        total_reward -= (Constant.MAX_SENSOR_DISTANCE - distance) / (Constant.MAX_SENSOR_DISTANCE - 14)
 
         return total_reward
 
@@ -243,6 +280,7 @@ class Simulation_rl:
         return max(-1.0, min(1.0, reward))
 
     def calculate_efficiency_reward_v3(self, previous_state: State, current_state: State) -> float:
+
         delivery_vehicle_position_at_previous_state = previous_state.get_delivery_vehicle_location()
         delivery_destination = self.target_delivery[1].delivery_destination
         previous_distance = manhattan_distance(delivery_vehicle_position_at_previous_state[0],
@@ -254,19 +292,30 @@ class Simulation_rl:
         reward = (previous_distance - current_distance) / max_change_in_manhattan_distance
         return reward
 
+    def agent_is_in_a_deadend(self, efficiency_reward, safety_reward) -> float:
+        if efficiency_reward>=0 and safety_reward<=-0.35:
+            return True
+        else:
+            return False
+
     def get_max_manhattan_step_distance(self):
+        if self.max_change_in_manhattan_distance is not None:
+            return self.max_change_in_manhattan_distance
         try:
-            x = 0
-            y = 0
-            radians = math.radians(Constant.MAX_STEERING_ANGLE)
-            vertical = math.cos(radians) * Constant.MAX_VEL
-            horizontal = math.sin(radians) * Constant.MAX_VEL
+            max_distance = 0
+            for angle in range(0, 360):
+                x = 0
+                y = 0
+                radians = math.radians(angle)
+                vertical = math.cos(radians) * Constant.MAX_VEL
+                horizontal = math.sin(radians) * Constant.MAX_VEL
 
-            y -= vertical
-            x -= horizontal
-
-            return manhattan_distance(0, 0, x, y)
+                y -= vertical
+                x -= horizontal
+                max_distance=max(manhattan_distance(0, 0, x, y),max_distance)
+            self.max_change_in_manhattan_distance = max_distance
+            return max_distance
         except Exception as e:
             print(f"Error getting max manhattan step distance due to {e}")
-            return self.delivery_vehicle.max_vel
+            return self.delivery_vehicle.max_vel+math.sqrt(2)
 
