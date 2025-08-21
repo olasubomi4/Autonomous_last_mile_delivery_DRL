@@ -1,8 +1,14 @@
 import random
 
 import joblib
+
+from Constant import Constant
 from rl.SImulation_rl import Simulation_rl
 from dotenv import load_dotenv
+
+from utils import scale_delivery_location_to_grid_cell_size
+from vehicles.Delivery import Delivery
+
 load_dotenv()
 from itertools import combinations
 from pathlib import Path
@@ -137,6 +143,9 @@ def generate_n_sequence_of_diverse_deliveries(n,counter):
 if __name__ == "__main__":
     number=random.randint(0, 100)
     # unique_deliveries= generate_n_amounts_of_delivery_locations(20,number)
-    seqence=generate_n_sequence_of_diverse_deliveries(2000,number)
+    simulation = Simulation_rl()
+    simulation._init_simulation()
+    unique_deliveries= simulation.env.generate_deliveries_from_desired_location_list(simulation.grid, simulation.player_start_pos)
+    seqence=generate_n_sequence_of_deliveries(700,unique_deliveries,number)
     print("abc")
 

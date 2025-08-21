@@ -133,6 +133,7 @@ class Agent (gym.Env):
         else:
             self.simulation.next_delivery()
         self.reset_counters()
+        print("abc")
 
     def reset_counters(self):
         self.delivery_collision_counter=0
@@ -193,10 +194,12 @@ def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Aut
             #     action, _ = model.predict(state)
 
             state, reward, done, info = env.step(action)
+            done=False
             reward_sum+=reward
             if info.get("completed_a_delivery", False):
                 successful_deliveries += 1
             if info.get("successfully_completed_deliveries", False):
+                done = True
                 successful_delivery_sequences += 1
             if steps%15==0:
                 pass

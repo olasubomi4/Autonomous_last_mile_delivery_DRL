@@ -6,7 +6,7 @@ import pygame
 from Constant import Constant
 from DeliveryStates import DeliveryStates
 from Environment.Grid import Grid
-from utils import blit_rotate_center, manhattan_distance, str_to_bool
+from utils import blit_rotate_center, manhattan_distance, str_to_bool, scale_delivery_location_to_grid_cell_size
 import random
 import time
 import heapq
@@ -178,15 +178,35 @@ class DublinCityCenter:
                 i = i + 1
 
         # deliveries.append((1800,600)) - trinity location
-        # for i in range(len(deliveries)):
-        #     deliveries.append(Delivery(grid.grid[i//Constant.CELL_SIZE][600]))
-        deliveries.append(Delivery(grid.grid[61][39]))
-        deliveries.append(Delivery(grid.grid[111][55]))
-        deliveries.append(Delivery(grid.grid[222][82]))
-        deliveries.append(Delivery(grid.grid[465][103]))
+        # for x,y in Constant.EASY_DELIVERY_LOCATIONS:
+        #     xd,yd= scale_delivery_location_to_grid_cell_size(x,y)
+        #     deliveries.append(Delivery(grid.grid[xd][yd]))
+        #     if len(deliveries)>num_deliveries:
+        #         break
+        # deliveries.append(Delivery(grid.grid[61][39]))
+        # deliveries.append(Delivery(grid.grid[111][55]))
+        # deliveries.append(Delivery(grid.grid[222][82]))
+        # deliveries.append(Delivery(grid.grid[465][103]))
         # deliveries.append(self.generate_deliveries_from_cache(cache_sequence_deliveries_counter)[2])
         return deliveries
 
+    def generate_deliveries_from_desired_location_list(self,grid,delivery_vehicle_start_pos,delivery_list=Constant.EASY_DELIVERY_LOCATIONS):
+        deliveries = []
+        i = 0
+        for x,y in delivery_list:
+            delivery_vehicle_start_pos_x,delivery_vehicle_start_pos_y = delivery_vehicle_start_pos[0] // Grid.CELL_SIZE, delivery_vehicle_start_pos[1] // Grid.CELL_SIZE
+            start_pos_grid_node = grid.grid[delivery_vehicle_start_pos_x][delivery_vehicle_start_pos_y]
+            xd,yd= scale_delivery_location_to_grid_cell_size(x,y)
+            delivery_grid_node = grid.grid[xd][yd]
+
+            if start_pos_grid_node != delivery_grid_node and (not delivery_grid_node.is_blocked ) and delivery_grid_node.is_road and self.is_surrounding_area_clear(x,y,grid):
+                deliveries.append(
+                    Delivery(delivery_grid_node)
+                )
+                i = i + 1
+            else:
+                print(f"delivery location {x},{y} is blocked")
+        return deliveries
 
     def generate_deliveries_from_cache(self,cache_sequence_deliveries_counter=0):
         cache_sequence_deliveries_counter= (cache_sequence_deliveries_counter%len(self.delivery_sequence_cache))

@@ -6,6 +6,9 @@ import time
 import string
 
 from dotenv import load_dotenv
+
+from Constant import Constant
+
 load_dotenv()
 
 
@@ -36,5 +39,9 @@ def str_to_bool(value):
 def is_time_difference_greater_than_threshold(initiation_time:datetime,current_time:datetime,time_threshold):
     diff_minutes = (current_time - initiation_time).total_seconds() / 60
     return diff_minutes > time_threshold
+
+def scale_delivery_location_to_grid_cell_size(x,y):
+    return  x// Constant.CELL_SIZE,y//Constant.CELL_SIZE
+
 
 
