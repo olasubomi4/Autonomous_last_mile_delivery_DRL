@@ -18,7 +18,7 @@ class Simulation_rl:
         self.render_mode=render_mode
         pass
 
-    def _init_simulation(self):
+    def _init_simulation(self,evaluation=False):
         pygame.init()
         basepath="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/"
         self.TRACK = scale_image(pygame.image.load(basepath+"imgs/track4.png"), Constant.TRACK_SCALE_FACTOR)
@@ -35,7 +35,12 @@ class Simulation_rl:
         self.WIDTH, self.HEIGHT = self.TRACK.get_width(), self.TRACK.get_height()
 
         self.WIN = pygame.display.set_mode((Constant.PYGAME_DISPLAY_MODE_WIDTH,Constant.PYGAME_DISPLAY_MODE_HEIGHT))
-        pygame.display.set_caption(os.environ.get("TRAIN_PARAMS_NAME","default"))
+        if evaluation:
+            display_caption=os.environ.get("EVALUATION_NAME","default")
+        else:
+            display_caption=os.environ.get("TRAIN_PARAMS_NAME","default")
+
+        pygame.display.set_caption(display_caption)
 
 
         self.env = DublinCityCenter(self.TRACK, self.TRACK_BORDER, self.OBSTACLE,

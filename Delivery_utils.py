@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # unique_deliveries= generate_n_amounts_of_delivery_locations(20,number)
     simulation = Simulation_rl()
     simulation._init_simulation()
-    unique_deliveries= simulation.env.generate_deliveries_from_desired_location_list(simulation.grid, simulation.player_start_pos)
+    unique_deliveries= simulation.env.generate_deliveries_from_desired_location_list(simulation.grid, simulation.player_start_pos,Constant.HARD_DELIVERY_LOCATIONS)
     seqence=generate_n_sequence_of_deliveries(700,unique_deliveries,number)
     print("abc")
 

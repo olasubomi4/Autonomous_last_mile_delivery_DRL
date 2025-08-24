@@ -9,6 +9,7 @@ import numpy as np
 from stable_baselines3 import TD3, SAC
 from stable_baselines3.common.noise import NormalActionNoise
 
+from rl.EpisodeEndReason import EpisodeEndReason
 from rl.SImulation_rl import Simulation_rl
 import os
 from rl.Controllers import Controllers
@@ -24,14 +25,17 @@ os.makedirs(model_dir,exist_ok=True)
 
 
 class Agent (gym.Env):
-    def __init__(self):
+    def __init__(self,evaluation_mode=False) -> None:
         super(Agent, self).__init__()
         self.simulation= Simulation_rl()
-        self.simulation._init_simulation()
+        self.simulation._init_simulation(evaluation=True)
         self.action_space = spaces.box.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.observation_space = spaces.box.Box(low=-1, high=1, shape=(16,), dtype=np.float32)
         self.previous_state= None
-        self.log_file=  os.environ.get("TRAIN_PARAMS_NAME","default")+"_resetting/resetting_logs.txt"
+        if evaluation_mode:
+            self.log_file= os.environ.get("EVALUATION_NAME","default")+"_evaluation/evaluation_logs.txt"
+        else:
+            self.log_file= os.environ.get("TRAIN_PARAMS_NAME","default")+"_resetting/resetting_logs.txt"
         os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
         self.delivery_sequence_start_time=datetime.now()
         self.delivery_collision_counter=0
@@ -58,6 +62,7 @@ class Agent (gym.Env):
                 self.simulation.reset_car()
             reward =-1
             done=True
+            info["terminal_reason"] = EpisodeEndReason.COLLISION.value
         elif self.simulation.does_car_collide_with_border():
             self.delivery_sequence_start_time = datetime.now()
             self.delivery_collision_counter=self.delivery_collision_counter+1
@@ -67,6 +72,7 @@ class Agent (gym.Env):
                 self.simulation.reset_car()
             reward =-1
             done = True
+            info["terminal_reason"] = EpisodeEndReason.COLLISION.value
         elif self.simulation.has_reached_destination():
             message="Reached destination"
             self.log(message)
@@ -83,6 +89,8 @@ class Agent (gym.Env):
             reward=1
             self.delivery_sequence_start_time = datetime.now()
             self.reset_counters()
+            info["terminal_reason"] = EpisodeEndReason.SUCCESS.value
+
 
         elif is_time_difference_greater_than_threshold(self.delivery_sequence_start_time,datetime.now(),Constant.MAXIMUM_DELIVERY_SEQUENCE_TIME_IN_MINUTES):
             self.delivery_timeout_counter = self.delivery_timeout_counter + 1
@@ -94,6 +102,7 @@ class Agent (gym.Env):
             message = f" Exceeded delivery time "
             self.log(message)
             self.delivery_sequence_start_time = datetime.now()
+            info["terminal_reason"] = EpisodeEndReason.STAGNATION.value
             # done=True
         # elif self.simulation.
 
@@ -213,8 +222,8 @@ def evaluate_agent(env, model_path="/Users/odekunleolasubomi/PycharmProjects/Aut
         end_time=time.time()
         print(f"Time taken for this episode: {end_time-start_time}")
         state=env.reset()
-    print(f"Sucessful deliveries: {successful_deliveries}")
-    print(f"Sucessful delivery sequences: {successful_delivery_sequences}")
+    print(f"Successful deliveries: {successful_deliveries}")
+    print(f"Successful delivery sequences: {successful_delivery_sequences}")
 
 
 

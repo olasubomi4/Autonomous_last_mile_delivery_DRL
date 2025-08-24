@@ -190,9 +190,10 @@ class DublinCityCenter:
         # deliveries.append(self.generate_deliveries_from_cache(cache_sequence_deliveries_counter)[2])
         return deliveries
 
-    def generate_deliveries_from_desired_location_list(self,grid,delivery_vehicle_start_pos,delivery_list=Constant.EASY_DELIVERY_LOCATIONS):
+    def generate_deliveries_from_desired_location_list(self,grid,delivery_vehicle_start_pos,delivery_list):
         deliveries = []
         i = 0
+        print(f"first delivery location {delivery_list[0]}")
         for x,y in delivery_list:
             delivery_vehicle_start_pos_x,delivery_vehicle_start_pos_y = delivery_vehicle_start_pos[0] // Grid.CELL_SIZE, delivery_vehicle_start_pos[1] // Grid.CELL_SIZE
             start_pos_grid_node = grid.grid[delivery_vehicle_start_pos_x][delivery_vehicle_start_pos_y]
@@ -231,7 +232,14 @@ class DublinCityCenter:
                 return []
             return joblib.load(train_cache_file_path)
         else:
-            test_cache_file_path = os.environ.get("TEST_DELIVERY_SEQUENCE_CACHE_FILE_PATH", None)
+            difficulty_level = os.environ.get("DELIVERY_DIFFICULTY_LEVEL", "Easy")
+            if difficulty_level.lower() == "medium":
+                test_cache_file_path ="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/rl/Delivery_sequences/test_delivery_sequences66.pkl"
+
+            elif difficulty_level.lower() == "hard":
+                test_cache_file_path ="/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/rl/Delivery_sequences/test_delivery_sequences18.pkl"
+            else:
+                test_cache_file_path = "/Users/odekunleolasubomi/PycharmProjects/Autonomous_last_mile_delivery_DRL/rl/Delivery_sequences/test_delivery_sequences75.pkl"
             if test_cache_file_path is None:
                 return []
             return joblib.load(test_cache_file_path)
